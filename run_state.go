@@ -18,11 +18,19 @@ type runState struct {
 func newRunState(name string, args []string, dynamic func(string) ([]string, error)) *runState {
 	pos := make([]string, 0)
 	flags := make(map[string][]string)
+	allPositional := false
 
 	for i := uint(0); i < uint(len(args)); i++ {
-		// check if the argument is positional
 		arg := args[i]
-		if len(arg) < 1 || arg[0] != '-' {
+
+		// check if the argument ends all flags
+		if arg == "--" {
+			allPositional = true
+			continue
+		}
+
+		// check if the argument is positional
+		if len(arg) < 1 || arg[0] != '-' || arg == "-" || allPositional {
 			pos = append(pos, arg)
 			continue
 		}
