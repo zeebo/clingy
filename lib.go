@@ -10,12 +10,12 @@
 // during init() functions, or otherwise. For example, consider
 // the following execution:
 //
-//	ok, err := env.Run(ctx, func(c clingy.Commands, f clingy.Flags) {
-//		c.Group("files", "Commands related to files", func() {
-//			c.New("copy", "Copy a file", new(cmdFilesCopy))
-//			c.New("delete", "Delete a file", new(cmdFilesDelete))
-//			c.New("read", "Read a file", new(cmdFilesRead))
-//			c.New("list", "List some files", new(cmdFilesList))
+//	ok, err := env.Run(ctx, func(cmds clingy.Commands) {
+//		cmds.Group("files", "Commands related to files", func() {
+//			cmds.New("copy", "Copy a file", new(cmdFilesCopy))
+//			cmds.New("delete", "Delete a file", new(cmdFilesDelete))
+//			cmds.New("read", "Read a file", new(cmdFilesRead))
+//			cmds.New("list", "List some files", new(cmdFilesList))
 //		})
 //		...
 //
@@ -32,9 +32,9 @@
 //		second string
 //	}
 //
-//	func (s *someCommand) Setup(args clingy.Arguments, flags clingy.Flags) {
-//		s.first = args.New("first", "first required argument").(string)
-//		s.second = args.New("second", "second required argument").(string)
+//	func (s *someCommand) Setup(params clingy.Params) {
+//		s.first = params.Arg("first", "first required argument").(string)
+//		s.second = params.Arg("second", "second required argument").(string)
 //	}
 //
 // This causes the command implementation to be more discoverable because
@@ -65,9 +65,6 @@ import (
 type Context interface {
 	context.Context
 
-	// WithContext returns a new Context with the context.Context replaced.
-	WithContext(ctx context.Context) Context
-
 	io.Reader // The same as .Stdin().Read
 	io.Writer // The same as .Stdout().Write
 
@@ -80,7 +77,7 @@ type Context interface {
 type Cmd interface {
 	// Setup is called to define the positional arguments and flags for the command.
 	// The returned values should be stored for the upcoming call to Execute.
-	Setup(args Arguments, flags Flags)
+	Setup(params Params)
 
 	// Execute is called after Setup and should run the command.
 	Execute(ctx Context) error
@@ -141,34 +138,39 @@ func Type(typ string) Option {
 	return Option{func(po *paramOpts) { po.typ = typ }}
 }
 
-// Arguments allows the creation of arguments as well as retreiving their values.
-type Arguments interface {
-	// New creates a new argument. The return value is the value of the argument.
+type Params interface {
+	// Flags is embedded to allow one to create command level flags.
+	Flags
+
+	// Arg creates a new argument. The return value is the value of the argument.
 	// If the Repeated option is specified, then the return type is a slice of
 	// whatever it would have been. Otherwise, if the Optional option is specified,
 	// the return type is a pointer to whatever it would have been.
 	//
-	// New panics if the same name is defined twice. New panics if any arguments
-	// are created after a Repeated argument is created. New panics if any arguments
+	// Arg panics if the same name is defined twice. Arg panics if any arguments
+	// are created after a Repeated argument is created. Arg panics if any arguments
 	// that are not Optional or Repeated are created after an Optional argument is
 	// created.
-	New(name, desc string, options ...Option) interface{}
+	Arg(name, desc string, options ...Option) interface{}
 }
 
 // Flags allows the creation of flags as well as retreiving their values.
 type Flags interface {
-	// New creates a new flag. The return value is the value of the flag.
+	// Flag creates a new flag. The return value is the value of the flag.
 	// If the Repeated option is specified, then the return type is a slice of
 	// whatever it would have been. Optional has no effect. The value provided
 	// in def is returned if the flag was not specified.
 	//
-	// New panics if the same name is defined twice, or if the same Short option
+	// Flag panics if the same name is defined twice, or if the same Short option
 	// is used twice.
-	New(name, desc string, def interface{}, options ...Option) interface{}
+	Flag(name, desc string, def interface{}, options ...Option) interface{}
 }
 
 // Commands is used to construct the tree of commands and subcommands.
 type Commands interface {
+	// Flags is embedded to allow one to create global flags.
+	Flags
+
 	// New creates a new command.
 	New(name, desc string, cmd Cmd)
 

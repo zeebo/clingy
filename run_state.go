@@ -75,10 +75,10 @@ func newRunState(name string, args []string, dynamic func(string) ([]string, err
 }
 
 func (st *runState) setupFlags() {
-	st.help = st.gflags.New(
+	st.help = st.gflags.Flag(
 		"help", "prints help for the command", false,
 		Short('h'), Transform(strconv.ParseBool)).(bool)
-	st.advanced = st.gflags.New(
+	st.advanced = st.gflags.Flag(
 		"advanced", "when used with -h, prints advanced flags help", false,
 		Transform(strconv.ParseBool)).(bool)
 }

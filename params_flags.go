@@ -1,21 +1,21 @@
 package clingy
 
 type paramsFlags struct {
-	ps      *params
+	ps      *paramsShared
 	flags   map[string][]string
 	dynamic func(string) ([]string, error)
 	dynerr  error
 }
 
 func newParamsFlags(flags map[string][]string, dynamic func(string) ([]string, error)) *paramsFlags {
-	return &paramsFlags{ps: newParams(), flags: flags, dynamic: dynamic}
+	return &paramsFlags{ps: newParamsShared(), flags: flags, dynamic: dynamic}
 }
 
 func (ps *paramsFlags) count() int             { return ps.ps.count() }
 func (ps *paramsFlags) params(cb func(*param)) { ps.ps.iter(cb) }
 func (ps *paramsFlags) hasErrors() bool        { return ps.ps.hasErrors() }
 
-func (ps *paramsFlags) New(name, desc string, def interface{}, options ...Option) (val interface{}) {
+func (ps *paramsFlags) Flag(name, desc string, def interface{}, options ...Option) (val interface{}) {
 	p := ps.ps.newParam(name, desc, def, options...)
 	if ps.dynerr != nil {
 		return p.zero()

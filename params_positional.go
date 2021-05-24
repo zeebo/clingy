@@ -7,20 +7,20 @@ import (
 )
 
 type paramsPos struct {
-	ps  *params
+	ps  *paramsShared
 	pos []string
 	opt bool // saw an optional argument
 	rep bool // saw a repeated argument
 }
 
 func newParamsPositional(pos []string) *paramsPos {
-	return &paramsPos{ps: newParams(), pos: pos}
+	return &paramsPos{ps: newParamsShared(), pos: pos}
 }
 
 func (ps *paramsPos) params(cb func(*param)) { ps.ps.iter(cb) }
 func (ps *paramsPos) hasErrors() bool        { return ps.ps.hasErrors() }
 
-func (ps *paramsPos) New(name, desc string, options ...Option) (val interface{}) {
+func (ps *paramsPos) Arg(name, desc string, options ...Option) (val interface{}) {
 	p := ps.ps.newParam(name, desc, nil, options...)
 	if p.err != nil {
 		return p.zero()

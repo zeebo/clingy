@@ -5,6 +5,10 @@ import (
 	"reflect"
 )
 
+//
+// paramater state information
+//
+
 type paramOpts struct {
 	opt   bool
 	rep   bool
@@ -51,26 +55,46 @@ func (p *param) flagType() string {
 	}
 }
 
+//
+// wrapper to combine positional and flag parameters
+//
+
+type params struct {
+	*paramsPos
+	*paramsFlags
+}
+
+func newParams(ps *paramsPos, pf *paramsFlags) *params {
+	return &params{
+		paramsPos:   ps,
+		paramsFlags: pf,
+	}
+}
+
+//
+// shared logic for parameters
+//
+
 type charSet [256 / 32]uint32
 
 func (c *charSet) Set(x byte)      { c[x/32] |= 1 << (x % 32) }
 func (c *charSet) Has(x byte) bool { return c[x/32]&(1<<(x%32)) != 0 }
 
-type params struct {
+type paramsShared struct {
 	list   []*param
 	set    map[string]*param
 	shorts charSet
 }
 
-func newParams() *params {
-	return &params{
+func newParamsShared() *paramsShared {
+	return &paramsShared{
 		set: make(map[string]*param),
 	}
 }
 
-func (ps *params) count() int { return len(ps.list) }
+func (ps *paramsShared) count() int { return len(ps.list) }
 
-func (ps *params) hasErrors() bool {
+func (ps *paramsShared) hasErrors() bool {
 	for _, p := range ps.list {
 		if p.err != nil {
 			return true
@@ -79,13 +103,13 @@ func (ps *params) hasErrors() bool {
 	return false
 }
 
-func (ps *params) iter(cb func(*param)) {
+func (ps *paramsShared) iter(cb func(*param)) {
 	for _, p := range ps.list {
 		cb(p)
 	}
 }
 
-func (ps *params) newParam(name, desc string, def interface{}, options ...Option) *param {
+func (ps *paramsShared) newParam(name, desc string, def interface{}, options ...Option) *param {
 	p := &param{name: name, def: def, desc: desc}
 	for _, opt := range options {
 		opt.do(&p.paramOpts)

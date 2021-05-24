@@ -18,9 +18,9 @@ func TestParams(t *testing.T) {
 
 	tr := true
 
-	assert.DeepEqual(t, "foo", pos.New("string", "").(string))
-	assert.DeepEqual(t, &tr, pos.New("bool", "", Optional, parseBool).(*bool))
-	assert.DeepEqual(t, []int{10, 20, 30}, pos.New("repInt", "", Repeated, parseInt).([]int))
-	assert.DeepEqual(t, 100, flags.New("int", "", 5, parseInt).(int))
-	assert.DeepEqual(t, 5, flags.New("def", "", 5, parseInt).(int))
+	assert.DeepEqual(t, "foo", pos.Arg("string", "").(string))
+	assert.DeepEqual(t, &tr, pos.Arg("bool", "", Optional, parseBool).(*bool))
+	assert.DeepEqual(t, []int{10, 20, 30}, pos.Arg("repInt", "", Repeated, parseInt).([]int))
+	assert.DeepEqual(t, 100, flags.Flag("int", "", 5, parseInt).(int))
+	assert.DeepEqual(t, 5, flags.Flag("def", "", 5, parseInt).(int))
 }

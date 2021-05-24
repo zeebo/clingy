@@ -13,7 +13,12 @@ type cmdDesc struct {
 }
 
 type commands struct {
+	Flags
 	cur []cmdDesc
+}
+
+func newCommands(flags Flags) *commands {
+	return &commands{Flags: flags}
 }
 
 func (cmds *commands) collect(fn func()) (out []cmdDesc) {
@@ -41,9 +46,9 @@ func (cmds *commands) Group(name, desc string, children func()) {
 	})
 }
 
-func collectDescs(flags Flags, fn func(Commands, Flags)) []cmdDesc {
-	cmds := new(commands)
-	return cmds.collect(func() { fn(cmds, flags) })
+func collectDescs(flags Flags, fn func(Commands)) []cmdDesc {
+	cmds := newCommands(flags)
+	return cmds.collect(func() { fn(cmds) })
 }
 
 func parseDesc(desc string) (short, long string) {

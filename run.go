@@ -10,7 +10,7 @@ import (
 // Run calls the fn to create and execute the tree of commands and global flags. Name is the name
 // of the binary. It returns a boolean indicating if the parsing/dispatching of the command
 // was successful. The error is the returned error from any executed command.
-func (env Environment) Run(ctx context.Context, fn func(Commands, Flags)) (bool, error) {
+func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error) {
 	if env.Name == "" {
 		env.Name = os.Args[0]
 	}
@@ -58,7 +58,7 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	}
 
 	if desc.cmd != nil {
-		desc.cmd.Setup(st.pos, st.flags)
+		desc.cmd.Setup(newParams(st.pos, st.flags))
 	}
 
 	// handle any errors parsing the arguments

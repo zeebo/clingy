@@ -7,17 +7,17 @@ import (
 )
 
 func TestCollectDescs(t *testing.T) {
-	assert.DeepEqual(t, collectDescs(nil, func(c Commands, flags Flags) {
-		c.New("foo0", "foo0", nil)
-		c.Group("bar", "bar", func() {
-			c.New("bar0", "bar0", nil)
-			c.New("bar1", "bar1", nil)
-			c.Group("baz", "baz", func() {
-				c.New("baz0", "baz0", nil)
+	assert.DeepEqual(t, collectDescs(nil, func(cmds Commands) {
+		cmds.New("foo0", "foo0", nil)
+		cmds.Group("bar", "bar", func() {
+			cmds.New("bar0", "bar0", nil)
+			cmds.New("bar1", "bar1", nil)
+			cmds.Group("baz", "baz", func() {
+				cmds.New("baz0", "baz0", nil)
 			})
-			c.New("bar2", "bar2", nil)
+			cmds.New("bar2", "bar2", nil)
 		})
-		c.New("foo1", "foo1", nil)
+		cmds.New("foo1", "foo1", nil)
 	}), []cmdDesc{
 		{"foo0", "foo0", "", nil, nil},
 		{"bar", "bar", "", nil, []cmdDesc{
