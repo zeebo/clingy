@@ -8,7 +8,7 @@ type cmdDesc struct {
 	name    string
 	short   string
 	long    string
-	cmd     Cmd
+	cmd     Command
 	subcmds []cmdDesc
 }
 
@@ -28,7 +28,7 @@ func (cmds *commands) collect(fn func()) (out []cmdDesc) {
 	return out
 }
 
-func (cmds *commands) New(name, desc string, cmd Cmd) {
+func (cmds *commands) New(name, desc string, cmd Command) {
 	short, long := parseDesc(desc)
 	cmds.cur = append(cmds.cur, cmdDesc{
 		name:  name,

@@ -7,12 +7,15 @@ import (
 	"github.com/zeebo/errs/v2"
 )
 
-// Run calls the fn to create and execute the tree of commands and global flags. Name is the name
-// of the binary. It returns a boolean indicating if the parsing/dispatching of the command
+// Run calls the fn to create and execute the tree of commands and global flags.
+// It returns a boolean indicating if the parsing/dispatching of the command
 // was successful. The error is the returned error from any executed command.
 func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error) {
 	if env.Name == "" {
 		env.Name = os.Args[0]
+	}
+	if env.Args == nil {
+		env.Args = os.Args[1:]
 	}
 	if env.Stdin == nil {
 		env.Stdin = os.Stdin

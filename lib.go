@@ -32,7 +32,7 @@
 //		second string
 //	}
 //
-//	func (s *someCommand) Setup(params clingy.Params) {
+//	func (s *someCommand) Setup(params clingy.Parameters) {
 //		s.first = params.Arg("first", "first required argument").(string)
 //		s.second = params.Arg("second", "second required argument").(string)
 //	}
@@ -73,11 +73,11 @@ type Context interface {
 	Stderr() io.Writer
 }
 
-// Cmd is the interface that executable commands implement.
-type Cmd interface {
+// Command is the interface that executable commands implement.
+type Command interface {
 	// Setup is called to define the positional arguments and flags for the command.
 	// The returned values should be stored for the upcoming call to Execute.
-	Setup(params Params)
+	Setup(params Parameters)
 
 	// Execute is called after Setup and should run the command.
 	Execute(ctx Context) error
@@ -138,7 +138,7 @@ func Type(typ string) Option {
 	return Option{func(po *paramOpts) { po.typ = typ }}
 }
 
-type Params interface {
+type Parameters interface {
 	// Flags is embedded to allow one to create command level flags.
 	Flags
 
@@ -175,7 +175,7 @@ type Commands interface {
 	Flags
 
 	// New creates a new command.
-	New(name, desc string, cmd Cmd)
+	New(name, desc string, cmd Command)
 
 	// Group begins a new command group. Calls to New inside of the children
 	// function are associated with the most recent call to Group.
@@ -185,10 +185,12 @@ type Commands interface {
 // Environment is used to control which command is run, what flags and arguments
 // it receives, and what input/output it has access to.
 type Environment struct {
-	// Name is the name of the binary being executed. If empty, os.Args[0] is used.
+	// Name is the name of the binary being executed.
+	// If empty, os.Args[0] is used.
 	Name string
 
 	// Args is consulted to determine values for the flags and positional arguments.
+	// If empty, os.Args[1:] is used.
 	Args []string
 
 	// Dynamic, if set, is consulted for global flag values if they are not
@@ -198,7 +200,7 @@ type Environment struct {
 
 	// Wrap, if set, is called with the context and command that would have
 	// been executed. The no-op implementation is `return cmd.Execute(ctx)`.
-	Wrap func(ctx Context, cmd Cmd) (err error)
+	Wrap func(ctx Context, cmd Command) (err error)
 
 	Stdin  io.Reader // Stdin defaults to os.Stdin if unset.
 	Stdout io.Writer // Stdout defaults to os.Stdout if unset.
