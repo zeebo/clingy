@@ -11,7 +11,7 @@ func newParamsFlags(flags map[string][]string, dynamic func(string) ([]string, e
 	return &paramsFlags{ps: newParamsShared(), flags: flags, dynamic: dynamic}
 }
 
-func (ps *paramsFlags) count() int             { return ps.ps.count() }
+func (ps *paramsFlags) getCount() int          { return ps.ps.getCount() }
 func (ps *paramsFlags) params(cb func(*param)) { ps.ps.iter(cb) }
 func (ps *paramsFlags) hasErrors() bool        { return ps.ps.hasErrors() }
 
@@ -31,6 +31,8 @@ func (ps *paramsFlags) Flag(name, desc string, def interface{}, options ...Optio
 	val, p.err = transformParam(p, val)
 	return val
 }
+
+func (ps *paramsFlags) Break() { ps.ps.Break() }
 
 func (ps *paramsFlags) getValue(p *param) (val interface{}, err error) {
 	vals, ok := ps.flags[p.name]

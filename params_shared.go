@@ -82,6 +82,7 @@ func (c *charSet) Has(x byte) bool { return c[x/32]&(1<<(x%32)) != 0 }
 
 type paramsShared struct {
 	list   []*param
+	count  int
 	set    map[string]*param
 	shorts charSet
 }
@@ -92,11 +93,11 @@ func newParamsShared() *paramsShared {
 	}
 }
 
-func (ps *paramsShared) count() int { return len(ps.list) }
+func (ps *paramsShared) getCount() int { return ps.count }
 
 func (ps *paramsShared) hasErrors() bool {
 	for _, p := range ps.list {
-		if p.err != nil {
+		if p != nil && p.err != nil {
 			return true
 		}
 	}
@@ -127,5 +128,8 @@ func (ps *paramsShared) newParam(name, desc string, def interface{}, options ...
 	ps.list = append(ps.list, p)
 	ps.set[name] = p
 	ps.shorts.Set(p.short)
+	ps.count++
 	return p
 }
+
+func (ps *paramsShared) Break() { ps.list = append(ps.list, nil) }

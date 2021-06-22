@@ -13,11 +13,6 @@ type basicContext struct {
 	stderr io.Writer
 }
 
-func (b basicContext) WithContext(ctx context.Context) Context {
-	b.Context = ctx
-	return b
-}
-
 func (b basicContext) Read(p []byte) (n int, err error)  { return b.stdin.Read(p) }
 func (b basicContext) Write(p []byte) (n int, err error) { return b.stdout.Write(p) }
 

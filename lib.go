@@ -164,6 +164,9 @@ type Flags interface {
 	// Flag panics if the same name is defined twice, or if the same Short option
 	// is used twice.
 	Flag(name, desc string, def interface{}, options ...Option) interface{}
+
+	// Break inserts a line break in the usage output of the flags.
+	Break()
 }
 
 // Commands is used to construct the tree of commands and subcommands.
