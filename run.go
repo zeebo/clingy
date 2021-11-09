@@ -56,6 +56,12 @@ func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdD
 }
 
 func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmdDesc) (ok bool, err error) {
+	// print usage if requested
+	if st.help {
+		env.printUsage(ctx, st, desc)
+		return true, nil
+	}
+
 	if ok, err := env.dispatch(ctx, st, desc.subcmds); ok {
 		return ok, err
 	}
@@ -89,12 +95,6 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 		if name, ok := st.firstPos(); len(desc.subcmds) > 0 && ok {
 			st.errors = append(st.errors, errs.Tag("unknown subcommand").Errorf("%q", name))
 		}
-		env.printUsage(ctx, st, desc)
-		return true, nil
-	}
-
-	// print usage if requested
-	if st.help {
 		env.printUsage(ctx, st, desc)
 		return true, nil
 	}
