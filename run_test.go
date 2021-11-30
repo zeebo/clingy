@@ -9,6 +9,17 @@ import (
 	"github.com/zeebo/clingy"
 )
 
+type command struct {
+}
+
+func (cmd *command) Setup(params clingy.Parameters) {
+	params.Arg("paramA", "paramA description")
+}
+
+func (cmd *command) Execute(ctx clingy.Context) error {
+	return nil
+}
+
 func TestRun_HelpDisplay(t *testing.T) {
 	runTestCommand := func(args ...string) (string, error) {
 		var stdout bytes.Buffer
@@ -19,7 +30,7 @@ func TestRun_HelpDisplay(t *testing.T) {
 
 			Stdout: &stdout,
 		}.Run(context.Background(), func(cmds clingy.Commands) {
-			cmds.New("subcommand", "test description", nil)
+			cmds.New("subcommand", "test description", &command{})
 		})
 		return stdout.String(), err
 	}
@@ -46,9 +57,32 @@ Use "testcommand [command] --help" for more information about a command.
 	require.NoError(t, err)
 	require.Equal(t, `
 Usage:
-    testcommand subcommand
+    testcommand subcommand <paramA>
 
     test description
+
+Arguments:
+    paramA    paramA description
+
+Global flags:
+    -h, --help         prints help for the command
+        --advanced     when used with -h, prints advanced flags help
+`, "\n"+result)
+
+	// test help for subcommand without mandatory parameter
+	result, err = runTestCommand("subcommand")
+	require.NoError(t, err)
+	require.Equal(t, `
+Errors:
+    argument error: paramA: required argument missing
+
+Usage:
+    testcommand subcommand <paramA>
+
+    test description
+
+Arguments:
+    paramA    paramA description
 
 Global flags:
     -h, --help         prints help for the command
