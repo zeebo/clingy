@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/zeebo/assert"
 	"github.com/zeebo/clingy"
 )
 
@@ -37,8 +37,8 @@ func TestRun_HelpDisplay(t *testing.T) {
 
 	// test help for root command
 	result, err := runTestCommand("-h")
-	require.NoError(t, err)
-	require.Equal(t, `
+	assert.NoError(t, err)
+	assert.Equal(t, `
 Usage:
     testcommand [command]
 
@@ -54,8 +54,8 @@ Use "testcommand [command] --help" for more information about a command.
 
 	// test help for subcommand
 	result, err = runTestCommand("subcommand", "-h")
-	require.NoError(t, err)
-	require.Equal(t, `
+	assert.NoError(t, err)
+	assert.Equal(t, `
 Usage:
     testcommand subcommand <paramA>
 
@@ -71,8 +71,8 @@ Global flags:
 
 	// test help for subcommand without mandatory parameter
 	result, err = runTestCommand("subcommand")
-	require.NoError(t, err)
-	require.Equal(t, `
+	assert.NoError(t, err)
+	assert.Equal(t, `
 Errors:
     argument error: paramA: required argument missing
 
