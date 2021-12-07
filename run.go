@@ -66,11 +66,13 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 
 	// handle any errors parsing the arguments
 	if st.hasErrors() {
-		st.params(func(p *param) {
-			if p.err != nil {
-				st.errors = append(st.errors, errs.Tag("argument error").Wrap(p.err))
-			}
-		})
+		if !st.help {
+			st.params(func(p *param) {
+				if p.err != nil {
+					st.errors = append(st.errors, errs.Tag("argument error").Wrap(p.err))
+				}
+			})
+		}
 		env.printUsage(ctx, st, desc)
 		return true, nil
 	}
