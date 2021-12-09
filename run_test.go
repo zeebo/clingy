@@ -3,6 +3,7 @@ package clingy_test
 import (
 	"bytes"
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/zeebo/assert"
@@ -88,4 +89,37 @@ Global flags:
     -h, --help         prints help for the command
         --advanced     when used with -h, prints advanced flags help
 `, "\n"+result)
+}
+
+func TestRun_BasicCalls(t *testing.T) {
+	cmds := func(cmds *clingy.RecordingCmds) {
+		cmds.New("cmd1")
+		cmds.New("cmd2")
+		cmds.Group("group1", func() {
+			cmds.New("sub1")
+			cmds.Group("group2", func() {
+				cmds.New("sub2")
+			})
+			cmds.New("sub3")
+		})
+		cmds.New("cmd3")
+		cmds.New("cmd4")
+	}
+
+	for _, cmd := range [][]string{
+		{"cmd1"},
+		{"cmd2"},
+		{"group1", "sub1"},
+		{"group1", "group2", "sub2"},
+		{"group1", "sub3"},
+		{"cmd3"},
+		{"cmd4"},
+	} {
+		name := strings.Join(cmd, " ")
+		cmd = append(cmd, "argString", "10")
+
+		result := clingy.Capture(clingy.Env("cmd", cmd...), cmds)
+		result.AssertRunValid(t)
+		result.AssertExecuted(t, name)
+	}
 }

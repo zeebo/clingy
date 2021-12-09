@@ -103,6 +103,10 @@ var (
 	// Advanced causes the flag to be hidden unless the --advanced flag is specified
 	// when usage information is printed.
 	Advanced = Option{func(po *paramOpts) { po.adv = true }}
+
+	// Boolean causes the flag to be considered a "boolean style" flag where it does
+	// not look at the next positional argument if no value is specified.
+	Boolean = Option{func(po *paramOpts) { po.bstyle = true }}
 )
 
 // Short causes the flag to be able to be specified with a single character.

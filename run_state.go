@@ -6,6 +6,7 @@ import (
 )
 
 type runState struct {
+	ah       *argsHandler
 	pos      *paramsPos
 	flags    *paramsFlags
 	gflags   *paramsFlags
@@ -16,60 +17,14 @@ type runState struct {
 }
 
 func newRunState(name string, args []string, dynamic func(string) ([]string, error)) *runState {
-	pos := make([]string, 0)
-	flags := make(map[string][]string)
-	allPositional := false
-
-	for i := uint(0); i < uint(len(args)); i++ {
-		arg := args[i]
-
-		// check if the argument ends all flags
-		if arg == "--" {
-			allPositional = true
-			continue
-		}
-
-		// check if the argument is positional
-		if len(arg) < 1 || arg[0] != '-' || arg == "-" || allPositional {
-			pos = append(pos, arg)
-			continue
-		}
-
-		// strip off the -- prefix for easier processing
-		if len(arg) >= 2 && arg[:2] == "--" {
-			arg = arg[2:]
-		} else {
-			arg = arg[1:]
-		}
-
-		// check for --foo=bar form
-		if idx := strings.IndexByte(arg, '='); idx >= 0 {
-			flags[arg[:idx]] = append(flags[arg[:idx]], arg[idx+1:])
-			continue
-		}
-
-		// check if the flag is the final argument
-		if i+1 >= uint(len(args)) {
-			flags[arg] = append(flags[arg], "true")
-			continue
-		}
-
-		// check if the next argument is also a flag
-		value := args[i+1]
-		if len(value) >= 1 && value[0] == '-' {
-			flags[arg] = append(flags[arg], "true")
-			continue
-		}
-
-		// consume the next argument as a flag
-		flags[arg] = append(flags[arg], value)
-		i++
-	}
+	pm := newParamsMaker()
+	ah := newArgsHandler(args, dynamic)
 
 	return &runState{
-		pos:    newParamsPositional(pos),
-		flags:  newParamsFlags(flags, nil),
-		gflags: newParamsFlags(flags, dynamic),
+		ah:     ah,
+		pos:    newParamsPositional(newParamsMaker(), ah),
+		flags:  newParamsFlags(pm, ah),
+		gflags: newParamsFlags(pm, ah),
 		names:  []string{name},
 	}
 }
@@ -77,10 +32,16 @@ func newRunState(name string, args []string, dynamic func(string) ([]string, err
 func (st *runState) setupFlags() {
 	st.help = st.gflags.Flag(
 		"help", "prints help for the command", false,
-		Short('h'), Transform(strconv.ParseBool)).(bool)
+		Boolean,
+		Short('h'),
+		Transform(strconv.ParseBool),
+	).(bool)
+
 	st.advanced = st.gflags.Flag(
 		"advanced", "when used with -h, prints advanced flags help", false,
-		Transform(strconv.ParseBool)).(bool)
+		Boolean,
+		Transform(strconv.ParseBool),
+	).(bool)
 }
 
 func (st *runState) params(cb func(*param)) {
@@ -93,16 +54,13 @@ func (st *runState) name() string {
 	return strings.Join(st.names, " ")
 }
 
-func (st *runState) firstPos() (string, bool) {
-	if len(st.pos.pos) == 0 {
-		return "", false
-	}
-	return st.pos.pos[0], true
+func (st *runState) peekName() (string, bool, error) {
+	return st.ah.PeekArg("command")
 }
 
-func (st *runState) pushName() {
-	st.names = append(st.names, st.pos.pos[0])
-	st.pos.pos = st.pos.pos[1:]
+func (st *runState) consumeName() {
+	name, _, _ := st.ah.ConsumeArg("command") // must have been peeked
+	st.names = append(st.names, name)
 }
 
 func (st *runState) hasErrors() bool {

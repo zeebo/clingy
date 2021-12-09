@@ -39,16 +39,16 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 }
 
 func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdDesc) (bool, error) {
-	name, ok := st.firstPos()
-	if !ok {
-		return false, nil
+	name, ok, err := st.peekName()
+	if err != nil || !ok {
+		return false, err
 	}
 
 	for _, desc := range descs {
 		if desc.name != name {
 			continue
 		}
-		st.pushName()
+		st.consumeName()
 		return env.dispatchDesc(ctx, st, desc)
 	}
 
@@ -79,17 +79,21 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 
 	// handle any dynamic errors surfacing from setting up flags by returning the error
 	// directly up through the Run call.
-	if err := st.flags.dynerr; err != nil {
+	if err := st.flags.err; err != nil {
 		return true, err
-	} else if err := st.gflags.dynerr; err != nil {
+	} else if err := st.gflags.err; err != nil {
 		return true, err
 	}
 
 	// if we don't have a command to execute, check if it's because they
 	// specified the wrong name, and error if so.
 	if desc.cmd == nil {
-		if name, ok := st.firstPos(); len(desc.subcmds) > 0 && ok {
+		name, ok, err := st.peekName()
+		if len(desc.subcmds) > 0 && ok {
 			st.errors = append(st.errors, errs.Tag("unknown subcommand").Errorf("%q", name))
+		}
+		if err != nil {
+			st.errors = append(st.errors, err)
 		}
 		env.printUsage(ctx, st, desc)
 		return true, nil
