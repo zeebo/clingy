@@ -33,6 +33,7 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 
 	ok, err := env.dispatch(ctx, st, descs)
 	if !ok {
+		env.appendUnknownCommandError(st)
 		env.printUsage(ctx, st, cmdDesc{subcmds: descs})
 	}
 	return len(st.errors) == 0, err
@@ -52,9 +53,17 @@ func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdD
 		return env.dispatchDesc(ctx, st, desc)
 	}
 
-	st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
-
 	return false, nil
+}
+
+func (env *Environment) appendUnknownCommandError(st *runState) {
+	name, ok, err := st.peekName()
+	if ok {
+		st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
+	}
+	if err != nil {
+		st.errors = append(st.errors, err)
+	}
 }
 
 func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmdDesc) (ok bool, err error) {
@@ -90,12 +99,8 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	// if we don't have a command to execute, check if it's because they
 	// specified the wrong name, and error if so.
 	if desc.cmd == nil {
-		name, ok, err := st.peekName()
-		if len(desc.subcmds) > 0 && ok {
-			st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
-		}
-		if err != nil {
-			st.errors = append(st.errors, err)
+		if len(desc.subcmds) > 0 {
+			env.appendUnknownCommandError(st)
 		}
 		env.printUsage(ctx, st, desc)
 		return true, nil
