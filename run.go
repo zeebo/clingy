@@ -52,6 +52,8 @@ func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdD
 		return env.dispatchDesc(ctx, st, desc)
 	}
 
+	st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
+
 	return false, nil
 }
 
@@ -90,7 +92,7 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	if desc.cmd == nil {
 		name, ok, err := st.peekName()
 		if len(desc.subcmds) > 0 && ok {
-			st.errors = append(st.errors, errs.Tag("unknown subcommand").Errorf("%q", name))
+			st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
 		}
 		if err != nil {
 			st.errors = append(st.errors, err)
