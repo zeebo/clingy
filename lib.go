@@ -206,6 +206,16 @@ type Environment struct {
 	// been executed. The no-op implementation is `return cmd.Execute(ctx)`.
 	Wrap func(ctx Context, cmd Command) (err error)
 
+	// SuggestionsMinEditDistance defines minimum Levenshtein distance to
+	// display suggestions when a command/subcommand is misspelled.
+	// Must be > 0.
+	// Default is 2
+	SuggestionsMinEditDistance int
+
+	// 	DisableSuggestions disables the suggestions based on Levenshtein
+	//	distance that go along with 'unknown command' messages
+	DisableSuggestions bool
+
 	Stdin  io.Reader // Stdin defaults to os.Stdin if unset.
 	Stdout io.Writer // Stdout defaults to os.Stdout if unset.
 	Stderr io.Writer // Stderr defaults to os.Stderr if unset.

@@ -33,7 +33,7 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 
 	ok, err := env.dispatch(ctx, st, descs)
 	if !ok {
-		env.appendUnknownCommandError(st)
+		env.appendUnknownCommandErrorWithSuggestions(st, descs)
 		env.printUsage(ctx, st, cmdDesc{subcmds: descs})
 	}
 	return len(st.errors) == 0, err
@@ -100,7 +100,7 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	// specified the wrong name, and error if so.
 	if desc.cmd == nil {
 		if len(desc.subcmds) > 0 {
-			env.appendUnknownCommandError(st)
+			env.appendUnknownCommandErrorWithSuggestions(st, desc.subcmds)
 		}
 		env.printUsage(ctx, st, desc)
 		return true, nil
