@@ -133,7 +133,7 @@ func printFlag(ctx context.Context, w io.Writer, p *param) {
 		fmt.Fprintf(w, " (repeated)")
 	}
 	if !isZero(p.def) {
-		fmt.Fprintf(w, " (default %#v)", p.def)
+		fmt.Fprintf(w, " (default %v)", p.def)
 	}
 	fmt.Fprintln(w)
 }

@@ -79,6 +79,9 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	if st.hasErrors() {
 		if !st.help {
 			st.params(func(p *param) {
+				if p == nil {
+					return
+				}
 				if p.err != nil {
 					st.errors = append(st.errors, errs.Tag("argument error").Wrap(p.err))
 				}
