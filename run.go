@@ -36,7 +36,7 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 		env.appendUnknownCommandErrorWithSuggestions(st, descs)
 		env.printUsage(ctx, st, cmdDesc{subcmds: descs})
 	}
-	return len(st.errors) == 0, err
+	return ok && len(st.errors) == 0, err
 }
 
 func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdDesc) (bool, error) {
@@ -106,7 +106,7 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 			env.appendUnknownCommandErrorWithSuggestions(st, desc.subcmds)
 		}
 		env.printUsage(ctx, st, desc)
-		return true, nil
+		return false, nil
 	}
 
 	// print usage if requested
