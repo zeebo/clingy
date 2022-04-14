@@ -10,6 +10,9 @@
 // during init() functions, or otherwise. For example, consider
 // the following execution:
 //
+//	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+//	defer cancel()
+//	env := clingy.Environment{}
 //	ok, err := env.Run(ctx, func(cmds clingy.Commands) {
 //		cmds.Group("files", "Commands related to files", func() {
 //			cmds.New("copy", "Copy a file", new(cmdFilesCopy))
@@ -27,14 +30,26 @@
 // implementation itself. This provides incentives to store the state
 // on the command object itself. For example:
 //
-//	type someCommand struct {
-//		first  string
-//		second string
+//	type cmdExample struct {
+//		prefix  string
+//		verbose bool
+//		first   string
+//		second  string
 //	}
 //
-//	func (s *someCommand) Setup(params clingy.Parameters) {
-//		s.first = params.Arg("first", "first required argument").(string)
-//		s.second = params.Arg("second", "second required argument").(string)
+//	func (c *cmdExample) Setup(params clingy.Parameters) {
+//		c.prefix = params.Flag("prefix", "prefix for output", "example >").(string)
+//		c.verbose = params.Flag("verbose", "verbose output", false,
+//			clingy.Transform(strconv.ParseBool), clingy.Boolean).(bool)
+//		c.first = params.Arg("first", "first required argument").(string)
+//		c.second = params.Arg("second", "second required argument").(string)
+//	}
+//
+//	func (c *cmdExample) Execute(ctx clingy.Context) error {
+//		fmt.Println(c.prefix, "verbose", c.verbose)
+//		fmt.Println(c.prefix, "first", c.first)
+//		fmt.Println(c.prefix, "second", c.second)
+//		return nil
 //	}
 //
 // This causes the command implementation to be more discoverable because
