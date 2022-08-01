@@ -60,19 +60,6 @@ import (
 	"io"
 )
 
-// Context is passed to commands when they are executed. It should be used by the
-// command to interact with the world.
-type Context interface {
-	context.Context
-
-	io.Reader // The same as .Stdin().Read
-	io.Writer // The same as .Stdout().Write
-
-	Stdin() io.Reader
-	Stdout() io.Writer
-	Stderr() io.Writer
-}
-
 // Command is the interface that executable commands implement.
 type Command interface {
 	// Setup is called to define the positional arguments and flags for the command.
@@ -80,7 +67,7 @@ type Command interface {
 	Setup(params Parameters)
 
 	// Execute is called after Setup and should run the command.
-	Execute(ctx Context) error
+	Execute(ctx context.Context) error
 }
 
 // Option is the type for values that control details around argument and flags like
@@ -204,7 +191,7 @@ type Environment struct {
 
 	// Wrap, if set, is called with the context and command that would have
 	// been executed. The no-op implementation is `return cmd.Execute(ctx)`.
-	Wrap func(ctx Context, cmd Command) (err error)
+	Wrap func(ctx context.Context, cmd Command) (err error)
 
 	// SuggestionsMinEditDistance defines minimum Levenshtein distance to
 	// display suggestions when a command/subcommand is misspelled.
