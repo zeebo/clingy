@@ -17,7 +17,7 @@ func (cmd *command) Setup(params clingy.Parameters) {
 	params.Arg("paramA", "paramA description")
 }
 
-func (cmd *command) Execute(ctx clingy.Context) error {
+func (cmd *command) Execute(ctx context.Context) error {
 	return nil
 }
 

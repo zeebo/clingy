@@ -212,7 +212,7 @@ func (r *RecordingCmd) Setup(params Parameters) {
 	r.Args.Setup(params)
 }
 
-func (r *RecordingCmd) Execute(ctx Context) error {
+func (r *RecordingCmd) Execute(ctx context.Context) error {
 	r.executed = true
 	return nil
 }
