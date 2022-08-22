@@ -14,21 +14,21 @@ import (
 
 var stdinKey, stdoutKey, stderrKey struct{}
 
-// BasicContext can help to test CLI apps with wrapping stdout/stdin/stderr.
-type BasicContext struct {
+// StdioContext can help to test CLI apps with wrapping stdout/stdin/stderr.
+type StdioContext struct {
 	context.Context
 }
 
 // StdioTestContext is for testing, where stdio is replaced with in-memory buffers.
 type StdioTestContext struct {
-	BasicContext
+	StdioContext
 }
 
-func WrapStdio(ctx context.Context) BasicContext {
+func WrapStdio(ctx context.Context) StdioContext {
 	ctx = context.WithValue(ctx, stdinKey, os.Stdin)
 	ctx = context.WithValue(ctx, stderrKey, os.Stderr)
 	ctx = context.WithValue(ctx, stdoutKey, os.Stdout)
-	return BasicContext{
+	return StdioContext{
 		Context: ctx,
 	}
 }
@@ -39,38 +39,38 @@ func WithBufferedStdio(ctx context.Context) StdioTestContext {
 	ctx = context.WithValue(ctx, stderrKey, &bytes.Buffer{})
 	ctx = context.WithValue(ctx, stdoutKey, &bytes.Buffer{})
 	return StdioTestContext{
-		BasicContext{
+		StdioContext{
 			ctx,
 		},
 	}
 }
 
-func NewBasicContext(ctx context.Context) BasicContext {
-	return BasicContext{
+func NewBasicContext(ctx context.Context) StdioContext {
+	return StdioContext{
 		Context: ctx,
 	}
 }
 
-func (b BasicContext) Read(p []byte) (n int, err error) {
+func (b StdioContext) Read(p []byte) (n int, err error) {
 	if b.Value(stdinKey) == nil {
 		return 0, errs.Errorf("stdin is not wrapped")
 	}
 	return b.Stdin().Read(p)
 }
-func (b BasicContext) Write(p []byte) (n int, err error) {
+func (b StdioContext) Write(p []byte) (n int, err error) {
 	if b.Value(stdoutKey) == nil {
 		return 0, errs.Errorf("stdout is not wrapped")
 	}
 	return b.Stdout().Write(p)
 }
 
-func (b BasicContext) Stdin() io.Reader {
+func (b StdioContext) Stdin() io.Reader {
 	return b.Value(stdinKey).(io.Reader)
 }
-func (b BasicContext) Stdout() io.Writer {
+func (b StdioContext) Stdout() io.Writer {
 	return b.Value(stdoutKey).(io.Writer)
 }
-func (b BasicContext) Stderr() io.Writer {
+func (b StdioContext) Stderr() io.Writer {
 	return b.Value(stderrKey).(io.Writer)
 }
 
