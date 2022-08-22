@@ -115,17 +115,10 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 		return true, nil
 	}
 
-	bctx := basicContext{
-		Context: ctx,
-		stdin:   env.Stdin,
-		stdout:  env.Stdout,
-		stderr:  env.Stderr,
-	}
-
 	if env.Wrap != nil {
-		err = env.Wrap(bctx, desc.cmd)
+		err = env.Wrap(ctx, desc.cmd)
 	} else {
-		err = desc.cmd.Execute(bctx)
+		err = desc.cmd.Execute(ctx)
 	}
 	return true, err
 }
