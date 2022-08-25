@@ -3,6 +3,7 @@ package clingy_test
 import (
 	"bytes"
 	"context"
+	"io"
 	"strings"
 	"testing"
 
@@ -122,4 +123,35 @@ func TestRun_BasicCalls(t *testing.T) {
 		result.AssertRunValid(t)
 		result.AssertExecuted(t, name)
 	}
+}
+
+type stdioCommand struct{}
+
+func (cmd *stdioCommand) Setup(params clingy.Parameters) {}
+
+func (cmd *stdioCommand) Execute(ctx context.Context) error {
+	in, _ := io.ReadAll(clingy.Stdin(ctx))
+	clingy.Stdout(ctx).Write(in)
+	clingy.Stderr(ctx).Write(in)
+	return nil
+}
+
+func TestRun_Stdio(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	_, err := clingy.Environment{
+		Name: "testcommand",
+		Args: []string{"run"},
+
+		Stdin:  strings.NewReader("hello world"),
+		Stdout: &stdout,
+		Stderr: &stderr,
+	}.Run(context.Background(), func(cmds clingy.Commands) {
+		cmds.New("run", "check stdio", &stdioCommand{})
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, stdout.String(), "hello world")
+	assert.Equal(t, stderr.String(), "hello world")
 }
