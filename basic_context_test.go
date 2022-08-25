@@ -1,24 +1,25 @@
 package clingy
 
 import (
+	"bytes"
 	"context"
 	"testing"
 )
 
 func TestBasicStdioWrapping(t *testing.T) {
 	ctx := context.Background()
-	bctx := WithBufferedStdio(ctx)
-	err := doSomething(bctx)
+	ctx = WithBufferedStdio(ctx)
+	err := doSomething(ctx)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
-	if bctx.GetWrittenOut() != "Just some output" {
-		t.Fatalf("Invalid output: %s", bctx.GetWrittenOut())
+	out := Stdout(ctx).(*bytes.Buffer)
+	if out.String() != "Just some output" {
+		t.Fatalf("Invalid output: %s", out.String())
 	}
 }
 
 func doSomething(ctx context.Context) error {
-	bctx := NewBasicContext(ctx)
-	_, err := bctx.Write([]byte("Just some output"))
+	_, err := Stdout(ctx).Write([]byte("Just some output"))
 	return err
 }
