@@ -4,15 +4,13 @@
 package clingy
 
 import (
-	"bytes"
 	"context"
 	"io"
-	"os"
 )
 
-type stdioContextKey string
+type stdioKeyType string
 
-const stdioKey stdioContextKey = "environment"
+const stdioKey stdioKeyType = "environment"
 
 type stdioEnvironment struct {
 	stdin  io.Reader
@@ -20,32 +18,20 @@ type stdioEnvironment struct {
 	stderr io.Writer
 }
 
-// WrapStdio saves stdin/out/err to the context for later use.
-func WrapStdio(ctx context.Context) context.Context {
-	return context.WithValue(ctx, stdioKey, stdioEnvironment{
-		stdout: os.Stdout,
-		stdin:  os.Stdin,
-		stderr: os.Stderr,
-	})
-}
-
-// WithBufferedStdio creates context with in-memory stdio targets.
-func WithBufferedStdio(ctx context.Context) context.Context {
-	return context.WithValue(ctx, stdioKey, stdioEnvironment{
-		stdout: &bytes.Buffer{},
-		stdin:  &bytes.Buffer{},
-		stderr: &bytes.Buffer{},
-	})
-}
-
+// Stdin returns the io.Reader from the Environment associated to the context.
 func Stdin(ctx context.Context) io.Reader {
-	return ctx.Value(stdioKey).(stdioEnvironment).stdin
+	val, _ := ctx.Value(stdioKey).(stdioEnvironment)
+	return val.stdin
 }
 
+// Stdout returns the io.Writer from the Environment associated to the context.
 func Stdout(ctx context.Context) io.Writer {
-	return ctx.Value(stdioKey).(stdioEnvironment).stdout
+	val, _ := ctx.Value(stdioKey).(stdioEnvironment)
+	return val.stdout
 }
 
+// Stderr returns the io.Writer from the Environment associated to the context.
 func Stderr(ctx context.Context) io.Writer {
-	return ctx.Value(stdioKey).(stdioEnvironment).stderr
+	val, _ := ctx.Value(stdioKey).(stdioEnvironment)
+	return val.stderr
 }
