@@ -11,8 +11,7 @@ import (
 	"github.com/zeebo/clingy"
 )
 
-type command struct {
-}
+type command struct{}
 
 func (cmd *command) Setup(params clingy.Parameters) {
 	params.Arg("paramA", "paramA description")
@@ -92,7 +91,7 @@ Global flags:
 `, "\n"+result)
 }
 
-func TestRun_BasicCalls(t *testing.T) {
+func TestRun(t *testing.T) {
 	cmds := func(cmds *clingy.RecordingCmds) {
 		cmds.New("cmd1")
 		cmds.New("cmd2")
@@ -107,32 +106,50 @@ func TestRun_BasicCalls(t *testing.T) {
 		cmds.New("cmd4")
 	}
 
-	for _, cmd := range [][]string{
-		{"cmd1"},
-		{"cmd2"},
-		{"group1", "sub1"},
-		{"group1", "group2", "sub2"},
-		{"group1", "sub3"},
-		{"cmd3"},
-		{"cmd4"},
-	} {
-		name := strings.Join(cmd, " ")
-		cmd = append(cmd, "argString", "10")
+	t.Run("BasicCalls", func(t *testing.T) {
+		for _, cmd := range [][]string{
+			{"cmd1"},
+			{"cmd2"},
+			{"group1", "sub1"},
+			{"group1", "group2", "sub2"},
+			{"group1", "sub3"},
+			{"cmd3"},
+			{"cmd4"},
+		} {
+			name := strings.Join(cmd, " ")
+			cmd = append(cmd, "argString", "10")
 
-		result := clingy.Capture(clingy.Env("cmd", cmd...), cmds)
-		result.AssertRunValid(t)
-		result.AssertExecuted(t, name)
-	}
+			result := clingy.Capture(clingy.Env("cmd", cmd...), cmds)
+			result.AssertRunValid(t)
+			result.AssertExecuted(t, name)
+		}
+	})
+
+	t.Run("MissingCalls", func(t *testing.T) {
+		for _, cmd := range [][]string{
+			{"cmd5"},
+			{"group1", "sub2"},
+			{"group1", "group2", "sub3"},
+		} {
+			result := clingy.Capture(clingy.Env("cmd", cmd...), cmds)
+			result.AssertStdoutContains(t, "unknown command")
+			assert.That(t, !result.Ok)
+		}
+	})
 }
 
-type stdioCommand struct{}
+type stdioCommand struct {
+	ExtraOutput string
+}
 
 func (cmd *stdioCommand) Setup(params clingy.Parameters) {}
 
 func (cmd *stdioCommand) Execute(ctx context.Context) error {
 	in, _ := io.ReadAll(clingy.Stdin(ctx))
 	clingy.Stdout(ctx).Write(in)
+	clingy.Stdout(ctx).Write([]byte(cmd.ExtraOutput))
 	clingy.Stderr(ctx).Write(in)
+	clingy.Stderr(ctx).Write([]byte(cmd.ExtraOutput))
 	return nil
 }
 
@@ -154,4 +171,83 @@ func TestRun_Stdio(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, stdout.String(), "hello world")
 	assert.Equal(t, stderr.String(), "hello world")
+}
+
+func TestRun_Root(t *testing.T) {
+	cmd1 := &stdioCommand{ExtraOutput: "cmd1"}
+	cmd2 := &stdioCommand{ExtraOutput: "cmd2"}
+	root := &stdioCommand{ExtraOutput: "root"}
+
+	check := func(expected string, args ...string) {
+		var stdout bytes.Buffer
+		var stderr bytes.Buffer
+
+		_, err := clingy.Environment{
+			Root: root,
+			Name: "testcommand",
+			Args: append([]string{}, args...),
+
+			Stdin:  strings.NewReader(""),
+			Stdout: &stdout,
+			Stderr: &stderr,
+		}.Run(context.Background(), func(cmds clingy.Commands) {
+			cmds.New("cmd1", "cmd1", cmd1)
+			cmds.New("cmd2", "cmd2", cmd2)
+		})
+
+		assert.NoError(t, err)
+		assert.Equal(t, stdout.String(), expected)
+		assert.Equal(t, stderr.String(), expected)
+	}
+
+	check("root")
+	check("cmd1", "cmd1")
+	check("cmd2", "cmd2")
+}
+
+func TestRun_RootHelp(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	ok, err := clingy.Environment{
+		Root: clingy.NewRecordingCmd("root"),
+		Name: "testcommand",
+		Args: []string{"-h"},
+
+		Stdin:  strings.NewReader(""),
+		Stdout: &stdout,
+		Stderr: &stderr,
+	}.Run(context.Background(), nil)
+
+	assert.NoError(t, err)
+	assert.That(t, ok)
+	assert.Equal(t, "", stderr.String())
+
+	assert.Equal(t, `
+Usage:
+    testcommand [flags] <Args.ValString> <Args.ValInt> [Args.OptString [Args.OptInt [Args.RepInt ...]]]
+
+Arguments:
+    Args.ValString    
+    Args.ValInt       
+    Args.OptString    
+    Args.OptInt       
+    Args.RepInt       
+
+Flags:
+        --Flags.ValString string    
+        --Flags.ValInt int          
+        --Flags.ValBool             
+        --Flags.OptString string    
+        --Flags.OptInt int          
+        --Flags.OptBool             
+        --Flags.RepString string     (repeated)
+        --Flags.RepInt int           (repeated)
+        --Flags.RepBool              (repeated)
+
+Global flags:
+    -h, --help         prints help for the command
+        --advanced     when used with -h, prints advanced flags help
+`, "\n"+stdout.String())
+
 }

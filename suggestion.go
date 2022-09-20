@@ -8,19 +8,18 @@ import (
 )
 
 func (env *Environment) appendUnknownCommandErrorWithSuggestions(st *runState, descs []cmdDesc) {
-	if env.DisableSuggestions {
+	dist := env.SuggestionsMinEditDistance
+	if dist < 0 {
 		env.appendUnknownCommandError(st)
 		return
-	}
-
-	if env.SuggestionsMinEditDistance <= 0 {
-		env.SuggestionsMinEditDistance = 2
+	} else if dist == 0 {
+		dist = 2
 	}
 
 	name, ok, err := st.peekName()
 	if ok {
 		suggestionsString := fmt.Sprintf("%q for %q", name, st.name())
-		if suggestions := suggestionsFor(name, descs, env.SuggestionsMinEditDistance); len(suggestions) > 0 {
+		if suggestions := suggestionsFor(name, descs, dist); len(suggestions) > 0 {
 			suggestionsString += "\n\n\tMaybe you meant:\n"
 			for _, s := range suggestions {
 				suggestionsString += fmt.Sprintf("\t\t%v\n", s)
@@ -28,6 +27,16 @@ func (env *Environment) appendUnknownCommandErrorWithSuggestions(st *runState, d
 		}
 
 		st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%s", suggestionsString))
+	}
+	if err != nil {
+		st.errors = append(st.errors, err)
+	}
+}
+
+func (env *Environment) appendUnknownCommandError(st *runState) {
+	name, ok, err := st.peekName()
+	if ok {
+		st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
 	}
 	if err != nil {
 		st.errors = append(st.errors, err)

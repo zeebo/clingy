@@ -31,18 +31,21 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 	descs := collectDescs(st.gflags, fn)
 	st.setupFlags()
 
-	ok, err := env.dispatch(ctx, st, descs)
-	if !ok {
+	valid, usage, err := env.dispatchDesc(ctx, st, cmdDesc{
+		cmd:     env.Root,
+		subcmds: descs,
+	})
+	if !usage {
 		env.appendUnknownCommandErrorWithSuggestions(st, descs)
 		env.printUsage(ctx, st, cmdDesc{subcmds: descs})
 	}
-	return ok && len(st.errors) == 0, err
+	return valid, err
 }
 
-func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdDesc) (bool, error) {
+func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdDesc) (bool, bool, error) {
 	name, ok, err := st.peekName()
 	if err != nil || !ok {
-		return false, err
+		return false, false, err
 	}
 
 	for _, desc := range descs {
@@ -53,22 +56,12 @@ func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdD
 		return env.dispatchDesc(ctx, st, desc)
 	}
 
-	return false, nil
+	return false, false, nil
 }
 
-func (env *Environment) appendUnknownCommandError(st *runState) {
-	name, ok, err := st.peekName()
-	if ok {
-		st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%q", name))
-	}
-	if err != nil {
-		st.errors = append(st.errors, err)
-	}
-}
-
-func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmdDesc) (ok bool, err error) {
-	if ok, err := env.dispatch(ctx, st, desc.subcmds); ok {
-		return ok, err
+func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmdDesc) (valid bool, usage bool, err error) {
+	if valid, usage, err := env.dispatch(ctx, st, desc.subcmds); valid {
+		return valid, usage, err
 	}
 
 	if desc.cmd != nil {
@@ -88,15 +81,15 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 			})
 		}
 		env.printUsage(ctx, st, desc)
-		return true, nil
+		return true, true, nil
 	}
 
 	// handle any dynamic errors surfacing from setting up flags by returning the error
 	// directly up through the Run call.
 	if err := st.flags.err; err != nil {
-		return true, err
+		return true, false, err
 	} else if err := st.gflags.err; err != nil {
-		return true, err
+		return true, false, err
 	}
 
 	// if we don't have a command to execute, check if it's because they
@@ -106,13 +99,13 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 			env.appendUnknownCommandErrorWithSuggestions(st, desc.subcmds)
 		}
 		env.printUsage(ctx, st, desc)
-		return false, nil
+		return false, true, nil
 	}
 
 	// print usage if requested
 	if st.help {
 		env.printUsage(ctx, st, desc)
-		return true, nil
+		return true, true, nil
 	}
 
 	ctx = context.WithValue(ctx, stdioKey, stdioEnvironment{
@@ -126,5 +119,5 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	} else {
 		err = desc.cmd.Execute(ctx)
 	}
-	return true, err
+	return true, true, err
 }

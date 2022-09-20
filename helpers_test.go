@@ -39,7 +39,8 @@ func Capture(env Environment, fn func(*RecordingCmds)) Result {
 func Env(name string, args ...string) Environment {
 	return Environment{
 		Name: name,
-		Args: append([]string{}, args...), // ensure args is non-nil
+		// ensure args is non-nil to avoid default
+		Args: append([]string{}, args...),
 	}
 }
 
@@ -121,7 +122,7 @@ func (r *RecordingCmds) Break() {
 
 func (r *RecordingCmds) New(name string) {
 	fullName := strings.Join(append(r.stack, name), " ")
-	cmd := newRecordingCmd(fullName)
+	cmd := NewRecordingCmd(fullName)
 	r.cmds.New(name, name+" command", cmd)
 	r.saved[fullName] = cmd
 }
@@ -199,7 +200,7 @@ func (ra *RecordingArgs) Setup(params Parameters) {
 	ra.RepInt = params.Arg("Args.RepInt", "", Repeated, parseInt).([]int)
 }
 
-func newRecordingCmd(name string) *RecordingCmd {
+func NewRecordingCmd(name string) *RecordingCmd {
 	return &RecordingCmd{
 		name: name,
 	}

@@ -23,7 +23,9 @@ func newCommands(flags Flags) *commands {
 
 func (cmds *commands) collect(fn func()) (out []cmdDesc) {
 	out, cmds.cur = cmds.cur, out
-	fn()
+	if fn != nil {
+		fn()
+	}
 	out, cmds.cur = cmds.cur, out
 	return out
 }
@@ -48,6 +50,9 @@ func (cmds *commands) Group(name, desc string, children func()) {
 
 func collectDescs(flags Flags, fn func(Commands)) []cmdDesc {
 	cmds := newCommands(flags)
+	if fn == nil {
+		fn = func(Commands) {}
+	}
 	return cmds.collect(func() { fn(cmds) })
 }
 

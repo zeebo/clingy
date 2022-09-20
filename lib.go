@@ -176,6 +176,11 @@ type Commands interface {
 // Environment is used to control which command is run, what flags and arguments
 // it receives, and what input/output it has access to.
 type Environment struct {
+	// Root specifies the command that is run if no arguments are passed.
+	// If nil, the user will be provided with a help screen displaying
+	// available commands if no arguments are passed.
+	Root Command
+
 	// Name is the name of the binary being executed.
 	// If empty, os.Args[0] is used.
 	Name string
@@ -195,13 +200,9 @@ type Environment struct {
 
 	// SuggestionsMinEditDistance defines minimum Levenshtein distance to
 	// display suggestions when a command/subcommand is misspelled.
-	// Must be > 0.
-	// Default is 2
+	// 0 is the default distance of 2.
+	// A negative value disables suggestions.
 	SuggestionsMinEditDistance int
-
-	// 	DisableSuggestions disables the suggestions based on Levenshtein
-	//	distance that go along with 'unknown command' messages
-	DisableSuggestions bool
 
 	Stdin  io.Reader // Stdin defaults to os.Stdin if unset.
 	Stdout io.Writer // Stdout defaults to os.Stdout if unset.
