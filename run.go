@@ -31,18 +31,14 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 	descs := collectDescs(st.gflags, fn)
 	st.setupFlags()
 
-	valid, usage, err := env.dispatchDesc(ctx, st, cmdDesc{
+	executed, _, err := env.dispatchDesc(ctx, st, cmdDesc{
 		cmd:     env.Root,
 		subcmds: descs,
 	})
-	if !usage {
-		env.appendUnknownCommandErrorWithSuggestions(st, descs)
-		env.printUsage(ctx, st, cmdDesc{subcmds: descs})
-	}
-	return valid, err
+	return executed, err
 }
 
-func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdDesc) (bool, bool, error) {
+func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdDesc) (executed bool, matched bool, err error) {
 	name, ok, err := st.peekName()
 	if err != nil || !ok {
 		return false, false, err
@@ -59,13 +55,19 @@ func (env *Environment) dispatch(ctx context.Context, st *runState, descs []cmdD
 	return false, false, nil
 }
 
-func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmdDesc) (valid bool, usage bool, err error) {
-	if valid, usage, err := env.dispatch(ctx, st, desc.subcmds); valid {
-		return valid, usage, err
+func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmdDesc) (executed bool, matched bool, err error) {
+	if executed, matched, err := env.dispatch(ctx, st, desc.subcmds); matched {
+		return executed, matched, err
 	}
 
 	if desc.cmd != nil {
 		desc.cmd.Setup(newParams(st.pos, st.flags))
+	}
+
+	// print usage if requested
+	if st.help {
+		env.printUsage(ctx, st, desc)
+		return true, true, nil
 	}
 
 	// handle any errors parsing the arguments
@@ -81,15 +83,7 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 			})
 		}
 		env.printUsage(ctx, st, desc)
-		return true, true, nil
-	}
-
-	// handle any dynamic errors surfacing from setting up flags by returning the error
-	// directly up through the Run call.
-	if err := st.flags.err; err != nil {
-		return true, false, err
-	} else if err := st.gflags.err; err != nil {
-		return true, false, err
+		return false, true, nil
 	}
 
 	// if we don't have a command to execute, check if it's because they
@@ -100,12 +94,6 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 		}
 		env.printUsage(ctx, st, desc)
 		return false, true, nil
-	}
-
-	// print usage if requested
-	if st.help {
-		env.printUsage(ctx, st, desc)
-		return true, true, nil
 	}
 
 	ctx = context.WithValue(ctx, stdioKey, stdioEnvironment{

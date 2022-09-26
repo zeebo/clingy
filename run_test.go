@@ -3,6 +3,7 @@ package clingy_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -250,4 +251,33 @@ Global flags:
         --advanced     when used with -h, prints advanced flags help
 `, "\n"+stdout.String())
 
+}
+
+type setupFailCommand struct{}
+
+func (cmd *setupFailCommand) Setup(params clingy.Parameters) {
+	params.Arg("argument", "failing argument", clingy.Transform(func(_ string) (string, error) {
+		return "", errors.New("parse failure")
+	}))
+}
+
+func (cmd *setupFailCommand) Execute(ctx context.Context) error {
+	return errors.New("unreachable")
+}
+
+func TestRun_InputValidation(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	ok, err := clingy.Environment{
+		Root: new(setupFailCommand),
+		Name: "setup-fail",
+		Args: []string{"foo"},
+
+		Stdout: &stdout,
+		Stderr: &stderr,
+	}.Run(context.Background(), nil)
+
+	assert.That(t, !ok)
+	assert.That(t, err == nil)
 }
