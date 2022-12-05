@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -280,4 +281,50 @@ func TestRun_InputValidation(t *testing.T) {
 
 	assert.That(t, !ok)
 	assert.That(t, err == nil)
+}
+
+type funcCommand struct {
+	SetupFn   func(params clingy.Parameters)
+	ExecuteFn func(ctx context.Context) error
+}
+
+func (cmd *funcCommand) Setup(params clingy.Parameters)    { cmd.SetupFn(params) }
+func (cmd *funcCommand) Execute(ctx context.Context) error { return cmd.ExecuteFn(ctx) }
+
+func TestRun_OptionalPtrDeref(t *testing.T) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	ok, err := clingy.Environment{
+		Root: &funcCommand{
+			SetupFn: func(params clingy.Parameters) {
+				params.Flag("test", "test flag", new(bool),
+					clingy.Transform(strconv.ParseBool), clingy.Boolean, clingy.Optional)
+			},
+			ExecuteFn: func(ctx context.Context) error { return nil },
+		},
+		Name: "testcommand",
+		Args: []string{"-h"},
+
+		Stdin:  strings.NewReader(""),
+		Stdout: &stdout,
+		Stderr: &stderr,
+	}.Run(context.Background(), nil)
+
+	assert.NoError(t, err)
+	assert.That(t, ok)
+	assert.Equal(t, "", stderr.String())
+
+	assert.Equal(t, `
+Usage:
+    testcommand [flags]
+
+Flags:
+        --test     test flag (default false)
+
+Global flags:
+    -h, --help         prints help for the command
+        --advanced     when used with -h, prints advanced flags help
+`, "\n"+stdout.String())
+
 }

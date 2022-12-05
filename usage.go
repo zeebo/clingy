@@ -133,9 +133,16 @@ func printFlag(ctx context.Context, w io.Writer, p *param) {
 		fmt.Fprintf(w, " (repeated)")
 	}
 	if !isZero(p.def) {
-		fmt.Fprintf(w, " (default %v)", p.def)
+		fmt.Fprintf(w, " (default %v)", deref(p.def))
 	}
 	fmt.Fprintln(w)
+}
+
+func deref(x interface{}) interface{} {
+	if rv := reflect.ValueOf(x); rv.Kind() == reflect.Ptr {
+		return deref(rv.Elem().Interface())
+	}
+	return x
 }
 
 func printUsageSuffix(ctx context.Context, w io.Writer, st *runState, subcmds bool) {
