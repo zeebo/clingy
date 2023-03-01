@@ -40,7 +40,7 @@ func printUsagePrefix(ctx context.Context, w io.Writer, st *runState, desc cmdDe
 
 	if st.advanced {
 		st.flags.params(func(p *param) {
-			if p == nil {
+			if p == nil || p.hidden {
 				return
 			} else if p.rep {
 				fmt.Fprintf(w, " [--%s %s ...]", p.name, p.flagType())
@@ -102,7 +102,7 @@ func printArguments(ctx context.Context, w io.Writer, pos *paramsPos) {
 func printFlags(ctx context.Context, w io.Writer, st *runState) {
 	hp := newHeaderPrinter(w, "Flags:")
 	st.flags.params(func(p *param) {
-		if st.advanced || p == nil || !p.adv {
+		if p == nil || (!p.hidden && (st.advanced || !p.adv)) {
 			printFlag(ctx, hp, p)
 		}
 	})
@@ -111,7 +111,7 @@ func printFlags(ctx context.Context, w io.Writer, st *runState) {
 func printGlobalFlags(ctx context.Context, w io.Writer, st *runState) {
 	hp := newHeaderPrinter(w, "Global flags:")
 	st.gflags.params(func(p *param) {
-		if st.advanced || p == nil || !p.adv {
+		if p == nil || (!p.hidden && (st.advanced || !p.adv)) {
 			printFlag(ctx, hp, p)
 		}
 	})

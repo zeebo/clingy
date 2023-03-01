@@ -159,6 +159,10 @@ type RecordingFlags struct {
 	RepString []string
 	RepInt    []int
 	RepBool   []bool
+
+	HiddenString string
+	HiddenInt    int
+	HiddenBool   bool
 }
 
 func (rf *RecordingFlags) Setup(flags Flags) {
@@ -176,6 +180,10 @@ func (rf *RecordingFlags) Setup(flags Flags) {
 	rf.RepString = flags.Flag("Flags.RepString", "", nil, Repeated).([]string)
 	rf.RepInt = flags.Flag("Flags.RepInt", "", nil, Repeated, parseInt).([]int)
 	rf.RepBool = flags.Flag("Flags.RepBool", "", nil, Repeated, Boolean, parseBool).([]bool)
+
+	rf.HiddenString = flags.Flag("Flags.HiddenString", "", nil, Hidden).(string)
+	rf.HiddenInt = flags.Flag("Flags.HiddenInt", "", nil, parseInt, Hidden).(int)
+	rf.HiddenBool = flags.Flag("Flags.HiddenBool", "", nil, Boolean, parseBool, Hidden).(bool)
 }
 
 type RecordingArgs struct {

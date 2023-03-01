@@ -91,6 +91,9 @@ var (
 	// when usage information is printed.
 	Advanced = Option{func(po *paramOpts) { po.adv = true }}
 
+	// Hidden causes the flag to be hidden when usage information is printed.
+	Hidden = Option{func(po *paramOpts) { po.hidden = true }}
+
 	// Boolean causes the flag to be considered a "boolean style" flag where it does
 	// not look at the next positional argument if no value is specified.
 	Boolean = Option{func(po *paramOpts) { po.bstyle = true }}
@@ -104,27 +107,27 @@ func Short(c byte) Option {
 // Transform takes a list of functions meant to parse and transform a string into some
 // final result type. The functions must be of the form (borrowing generics syntax)
 //
-//    func[type T, S any](x T) (y S, err error)
+//	func[type T, S any](x T) (y S, err error)
 //
 // The first function always has an input of type string. The functions are called
 // in sequence. If the argument or flag is Repeated, the functions are called on each
 // element of the values. If Transform is specified multiple times, the functions
 // are appended. In other words, the following two calls are equivalent:
 //
-//    args.New(..., Transform(f1), Transform(f2))
-//    args.New(..., Transform(f1, f2))
+//	args.New(..., Transform(f1), Transform(f2))
+//	args.New(..., Transform(f1, f2))
 func Transform(fns ...interface{}) Option {
 	return Option{func(po *paramOpts) { po.fns = append(po.fns, fns...) }}
 }
 
 // Type specifies what type to show in the usage for a flag. For example, specifying
 //
-//     type MyInt int
-//     args.New("foo", "some foo flag", MyInt(5), Type("my_int"), Transform(..)).(MyInt)
+//	type MyInt int
+//	args.New("foo", "some foo flag", MyInt(5), Type("my_int"), Transform(..)).(MyInt)
 //
 // would have a usage that looks like
 //
-//   --foo my_int    some foo flag (default 5)
+//	--foo my_int    some foo flag (default 5)
 func Type(typ string) Option {
 	return Option{func(po *paramOpts) { po.typ = typ }}
 }

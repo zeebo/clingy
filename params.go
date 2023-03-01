@@ -13,6 +13,7 @@ type paramOpts struct {
 	rep    bool
 	short  byte
 	adv    bool
+	hidden bool
 	bstyle bool
 	typ    string
 	fns    []interface{}

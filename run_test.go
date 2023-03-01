@@ -251,7 +251,30 @@ Global flags:
     -h, --help         prints help for the command
         --advanced     when used with -h, prints advanced flags help
 `, "\n"+stdout.String())
+}
 
+func TestRun_HiddenParse(t *testing.T) {
+	root := clingy.NewRecordingCmd("root")
+
+	ok, err := clingy.Environment{
+		Root: root,
+		Name: "testcommand",
+		Args: []string{
+			"arg1", "10",
+			"--Flags.HiddenInt", "5",
+			"--Flags.HiddenString", "foo",
+			"--Flags.HiddenBool",
+		},
+
+		Stdin: strings.NewReader(""),
+	}.Run(context.Background(), nil)
+
+	assert.NoError(t, err)
+	assert.That(t, ok)
+
+	assert.Equal(t, root.Flags.HiddenInt, 5)
+	assert.Equal(t, root.Flags.HiddenString, "foo")
+	assert.Equal(t, root.Flags.HiddenBool, true)
 }
 
 type setupFailCommand struct{}
