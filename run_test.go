@@ -1,9 +1,9 @@
 package clingy_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
@@ -13,99 +13,88 @@ import (
 	"github.com/zeebo/clingy"
 )
 
-type command struct{}
-
-func (cmd *command) Setup(params clingy.Parameters) {
-	params.Arg("paramA", "paramA description")
-}
-
-func (cmd *command) Execute(ctx context.Context) error {
-	return nil
-}
-
 func TestRun_HelpDisplay(t *testing.T) {
-	runTestCommand := func(args ...string) (string, error) {
-		var stdout bytes.Buffer
-
-		_, err := clingy.Environment{
-			Name: "testcommand",
-			Args: args,
-
-			Stdout: &stdout,
-		}.Run(context.Background(), func(cmds clingy.Commands) {
-			cmds.New("subcommand", "test description", &command{})
+	run := func(args ...string) Result {
+		return Capture(Env("testcommand", nil, args...), func(cmds clingy.Commands) {
+			cmds.New("subcommand", "test description", &funcCommand{
+				SetupFn:   func(params clingy.Parameters) { params.Arg("paramA", "paramA description") },
+				ExecuteFn: func(ctx context.Context) error { return nil },
+			})
 		})
-		return stdout.String(), err
 	}
 
-	// test help for root command
-	result, err := runTestCommand("-h")
-	assert.NoError(t, err)
-	assert.Equal(t, `
-Usage:
-    testcommand [command]
+	{ // test help for root command
+		result := run("-h")
+		result.AssertValid(t)
+		result.AssertStdout(t, `
+			Usage:
+			    testcommand [command]
 
-Available commands:
-    subcommand    test description
+			Available commands:
+			    subcommand    test description
 
-Global flags:
-    -h, --help         prints help for the command
-        --advanced     when used with -h, prints advanced flags help
+			Global flags:
+			    -h, --help         prints help for the command
+			        --advanced     when used with -h, prints advanced flags help
 
-Use "testcommand [command] --help" for more information about a command.
-`, "\n"+result)
+			Use "testcommand [command] --help" for more information about a command.
+		`)
+	}
 
-	// test help for subcommand
-	result, err = runTestCommand("subcommand", "-h")
-	assert.NoError(t, err)
-	assert.Equal(t, `
-Usage:
-    testcommand subcommand <paramA>
+	{ // test help for subcommand
+		result := run("subcommand", "-h")
+		result.AssertValid(t)
+		result.AssertStdout(t, `
+			Usage:
+			    testcommand subcommand <paramA>
 
-    test description
+			    test description
 
-Arguments:
-    paramA    paramA description
+			Arguments:
+			    paramA    paramA description
 
-Global flags:
-    -h, --help         prints help for the command
-        --advanced     when used with -h, prints advanced flags help
-`, "\n"+result)
+			Global flags:
+			    -h, --help         prints help for the command
+			        --advanced     when used with -h, prints advanced flags help
+		`)
+	}
 
-	// test help for subcommand without mandatory parameter
-	result, err = runTestCommand("subcommand")
-	assert.NoError(t, err)
-	assert.Equal(t, `
-Errors:
-    argument error: paramA: required argument missing
+	{ // test help for subcommand without mandatory parameter
+		result := run("subcommand")
+		assert.That(t, !result.Ok)
+		assert.That(t, result.Err == nil)
+		result.AssertStdout(t, `
+			Errors:
+			    argument error: paramA: required argument missing
 
-Usage:
-    testcommand subcommand <paramA>
+			Usage:
+			    testcommand subcommand <paramA>
 
-    test description
+			    test description
 
-Arguments:
-    paramA    paramA description
+			Arguments:
+			    paramA    paramA description
 
-Global flags:
-    -h, --help         prints help for the command
-        --advanced     when used with -h, prints advanced flags help
-`, "\n"+result)
+			Global flags:
+			    -h, --help         prints help for the command
+			        --advanced     when used with -h, prints advanced flags help
+		`)
+	}
 }
 
-func TestRun(t *testing.T) {
-	cmds := func(cmds *clingy.RecordingCmds) {
-		cmds.New("cmd1")
-		cmds.New("cmd2")
-		cmds.Group("group1", func() {
-			cmds.New("sub1")
-			cmds.Group("group2", func() {
-				cmds.New("sub2")
+func TestRun_Dispatches(t *testing.T) {
+	cmds := func(cmds clingy.Commands) {
+		cmds.New("cmd1", "", printCommand("cmd1"))
+		cmds.New("cmd2", "", printCommand("cmd2"))
+		cmds.Group("group1", "", func() {
+			cmds.New("sub1", "", printCommand("group1 sub1"))
+			cmds.Group("group2", "", func() {
+				cmds.New("sub2", "", printCommand("group1 group2 sub2"))
 			})
-			cmds.New("sub3")
+			cmds.New("sub3", "", printCommand("group1 sub3"))
 		})
-		cmds.New("cmd3")
-		cmds.New("cmd4")
+		cmds.New("cmd3", "", printCommand("cmd3"))
+		cmds.New("cmd4", "", printCommand("cmd4"))
 	}
 
 	t.Run("BasicCalls", func(t *testing.T) {
@@ -118,12 +107,9 @@ func TestRun(t *testing.T) {
 			{"cmd3"},
 			{"cmd4"},
 		} {
-			name := strings.Join(cmd, " ")
-			cmd = append(cmd, "argString", "10")
-
-			result := clingy.Capture(clingy.Env("cmd", cmd...), cmds)
-			result.AssertRunValid(t)
-			result.AssertExecuted(t, name)
+			result := Capture(Env("cmd", nil, cmd...), cmds)
+			result.AssertValid(t)
+			result.AssertStdout(t, strings.Join(cmd, " "))
 		}
 	})
 
@@ -133,73 +119,42 @@ func TestRun(t *testing.T) {
 			{"group1", "sub2"},
 			{"group1", "group2", "sub3"},
 		} {
-			result := clingy.Capture(clingy.Env("cmd", cmd...), cmds)
-			result.AssertStdoutContains(t, "unknown command")
+			result := Capture(Env("cmd", nil, cmd...), cmds)
 			assert.That(t, !result.Ok)
+			result.AssertStdoutContains(t, `unknown command: `)
 		}
 	})
 }
 
-type stdioCommand struct {
-	ExtraOutput string
-}
-
-func (cmd *stdioCommand) Setup(params clingy.Parameters) {}
-
-func (cmd *stdioCommand) Execute(ctx context.Context) error {
-	in, _ := io.ReadAll(clingy.Stdin(ctx))
-	clingy.Stdout(ctx).Write(in)
-	clingy.Stdout(ctx).Write([]byte(cmd.ExtraOutput))
-	clingy.Stderr(ctx).Write(in)
-	clingy.Stderr(ctx).Write([]byte(cmd.ExtraOutput))
-	return nil
-}
-
 func TestRun_Stdio(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
+	env := Env("testcommand", nil, "run")
+	env.Stdin = strings.NewReader("hello world")
 
-	_, err := clingy.Environment{
-		Name: "testcommand",
-		Args: []string{"run"},
-
-		Stdin:  strings.NewReader("hello world"),
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}.Run(context.Background(), func(cmds clingy.Commands) {
-		cmds.New("run", "check stdio", &stdioCommand{})
+	result := Capture(env, func(cmds clingy.Commands) {
+		cmds.New("run", "check stdio", &funcCommand{
+			SetupFn: func(params clingy.Parameters) {},
+			ExecuteFn: func(ctx context.Context) error {
+				in, _ := io.ReadAll(clingy.Stdin(ctx))
+				clingy.Stdout(ctx).Write(in)
+				clingy.Stderr(ctx).Write(in)
+				return nil
+			},
+		})
 	})
-
-	assert.NoError(t, err)
-	assert.Equal(t, stdout.String(), "hello world")
-	assert.Equal(t, stderr.String(), "hello world")
+	result.AssertValid(t)
+	result.AssertStdout(t, "hello world")
+	result.AssertStderr(t, "hello world")
 }
 
 func TestRun_Root(t *testing.T) {
-	cmd1 := &stdioCommand{ExtraOutput: "cmd1"}
-	cmd2 := &stdioCommand{ExtraOutput: "cmd2"}
-	root := &stdioCommand{ExtraOutput: "root"}
-
 	check := func(expected string, args ...string) {
-		var stdout bytes.Buffer
-		var stderr bytes.Buffer
-
-		_, err := clingy.Environment{
-			Root: root,
-			Name: "testcommand",
-			Args: append([]string{}, args...),
-
-			Stdin:  strings.NewReader(""),
-			Stdout: &stdout,
-			Stderr: &stderr,
-		}.Run(context.Background(), func(cmds clingy.Commands) {
-			cmds.New("cmd1", "cmd1", cmd1)
-			cmds.New("cmd2", "cmd2", cmd2)
-		})
-
-		assert.NoError(t, err)
-		assert.Equal(t, stdout.String(), expected)
-		assert.Equal(t, stderr.String(), expected)
+		result := Capture(Env("testcommand", printCommand("root"), args...),
+			func(cmds clingy.Commands) {
+				cmds.New("cmd1", "cmd1", printCommand("cmd1"))
+				cmds.New("cmd2", "cmd2", printCommand("cmd2"))
+			})
+		result.AssertValid(t)
+		result.AssertStdout(t, expected)
 	}
 
 	check("root")
@@ -207,147 +162,139 @@ func TestRun_Root(t *testing.T) {
 	check("cmd2", "cmd2")
 }
 
-func TestRun_RootHelp(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	ok, err := clingy.Environment{
-		Root: clingy.NewRecordingCmd("root"),
-		Name: "testcommand",
-		Args: []string{"-h"},
-
-		Stdin:  strings.NewReader(""),
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}.Run(context.Background(), nil)
-
-	assert.NoError(t, err)
-	assert.That(t, ok)
-	assert.Equal(t, "", stderr.String())
-
-	assert.Equal(t, `
-Usage:
-    testcommand [flags] <Args.ValString> <Args.ValInt> [Args.OptString [Args.OptInt [Args.RepInt ...]]]
-
-Arguments:
-    Args.ValString    
-    Args.ValInt       
-    Args.OptString    
-    Args.OptInt       
-    Args.RepInt       
-
-Flags:
-        --Flags.ValString string    
-        --Flags.ValInt int          
-        --Flags.ValBool             
-        --Flags.OptString string    
-        --Flags.OptInt int          
-        --Flags.OptBool             
-        --Flags.RepString string     (repeated)
-        --Flags.RepInt int           (repeated)
-        --Flags.RepBool              (repeated)
-
-Global flags:
-    -h, --help         prints help for the command
-        --advanced     when used with -h, prints advanced flags help
-`, "\n"+stdout.String())
-}
-
 func TestRun_HiddenParse(t *testing.T) {
-	root := clingy.NewRecordingCmd("root")
+	var (
+		fstring string
+		fint    int
+		fbool   bool
+	)
 
-	ok, err := clingy.Environment{
-		Root: root,
-		Name: "testcommand",
-		Args: []string{
-			"arg1", "10",
-			"--Flags.HiddenInt", "5",
-			"--Flags.HiddenString", "foo",
-			"--Flags.HiddenBool",
+	root := &funcCommand{
+		SetupFn: func(params clingy.Parameters) {
+			parseInt := clingy.Transform(strconv.Atoi)
+			parseBool := clingy.Transform(strconv.ParseBool)
+
+			fstring = params.Flag("Flags.HiddenString", "", "", clingy.Hidden).(string)
+			fint = params.Flag("Flags.HiddenInt", "", 0, parseInt, clingy.Hidden).(int)
+			fbool = params.Flag("Flags.HiddenBool", "", false, clingy.Boolean, parseBool, clingy.Hidden).(bool)
 		},
+		ExecuteFn: func(ctx context.Context) error { return nil },
+	}
 
-		Stdin: strings.NewReader(""),
-	}.Run(context.Background(), nil)
+	result := Run(root,
+		"--Flags.HiddenInt", "5",
+		"--Flags.HiddenString", "foo",
+		"--Flags.HiddenBool",
+	)
+	result.AssertValid(t)
 
-	assert.NoError(t, err)
-	assert.That(t, ok)
-
-	assert.Equal(t, root.Flags.HiddenInt, 5)
-	assert.Equal(t, root.Flags.HiddenString, "foo")
-	assert.Equal(t, root.Flags.HiddenBool, true)
-}
-
-type setupFailCommand struct{}
-
-func (cmd *setupFailCommand) Setup(params clingy.Parameters) {
-	params.Arg("argument", "failing argument", clingy.Transform(func(_ string) (string, error) {
-		return "", errors.New("parse failure")
-	}))
-}
-
-func (cmd *setupFailCommand) Execute(ctx context.Context) error {
-	return errors.New("unreachable")
+	assert.Equal(t, fint, 5)
+	assert.Equal(t, fstring, "foo")
+	assert.Equal(t, fbool, true)
 }
 
 func TestRun_InputValidation(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
+	root := &funcCommand{
+		ExecuteFn: func(ctx context.Context) error { return errors.New("unreachable") },
+		SetupFn: func(params clingy.Parameters) {
+			params.Arg("argument", "failing argument", clingy.Transform(func(_ string) (string, error) {
+				return "", errors.New("parse failure")
+			}))
+		},
+	}
 
-	ok, err := clingy.Environment{
-		Root: new(setupFailCommand),
-		Name: "setup-fail",
-		Args: []string{"foo"},
-
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}.Run(context.Background(), nil)
-
-	assert.That(t, !ok)
-	assert.That(t, err == nil)
+	result := Run(root, "foo")
+	assert.That(t, !result.Ok)
+	assert.That(t, result.Err == nil)
 }
-
-type funcCommand struct {
-	SetupFn   func(params clingy.Parameters)
-	ExecuteFn func(ctx context.Context) error
-}
-
-func (cmd *funcCommand) Setup(params clingy.Parameters)    { cmd.SetupFn(params) }
-func (cmd *funcCommand) Execute(ctx context.Context) error { return cmd.ExecuteFn(ctx) }
 
 func TestRun_OptionalPtrDeref(t *testing.T) {
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-
-	ok, err := clingy.Environment{
-		Root: &funcCommand{
-			SetupFn: func(params clingy.Parameters) {
-				params.Flag("test", "test flag", new(bool),
-					clingy.Transform(strconv.ParseBool), clingy.Boolean, clingy.Optional)
-			},
-			ExecuteFn: func(ctx context.Context) error { return nil },
+	root := &funcCommand{
+		ExecuteFn: func(ctx context.Context) error { return nil },
+		SetupFn: func(params clingy.Parameters) {
+			params.Flag("test", "test flag", new(bool), clingy.Transform(strconv.ParseBool), clingy.Boolean, clingy.Optional)
 		},
-		Name: "testcommand",
-		Args: []string{"-h"},
+	}
 
-		Stdin:  strings.NewReader(""),
-		Stdout: &stdout,
-		Stderr: &stderr,
-	}.Run(context.Background(), nil)
+	result := Run(root, "-h")
+	result.AssertValid(t)
+	result.AssertStdout(t, `
+		Usage:
+		    testcommand [flags]
 
-	assert.NoError(t, err)
-	assert.That(t, ok)
-	assert.Equal(t, "", stderr.String())
+		Flags:
+		        --test     test flag (default false)
 
-	assert.Equal(t, `
-Usage:
-    testcommand [flags]
+		Global flags:
+		    -h, --help         prints help for the command
+		        --advanced     when used with -h, prints advanced flags help
+	`)
 
-Flags:
-        --test     test flag (default false)
+}
 
-Global flags:
-    -h, --help         prints help for the command
-        --advanced     when used with -h, prints advanced flags help
-`, "\n"+stdout.String())
+func TestRun_GetenvUsage(t *testing.T) {
+	root := &funcCommand{
+		SetupFn:   func(params clingy.Parameters) { params.Flag("test", "test flag", "", clingy.Getenv("TEST_FLAG")) },
+		ExecuteFn: func(ctx context.Context) error { return nil },
+	}
 
+	result := Run(root, "-h")
+	result.AssertValid(t)
+	result.AssertStdout(t, `
+		Usage:
+		    testcommand [flags]
+
+		Flags:
+		        --test string    test flag (env TEST_FLAG)
+
+		Global flags:
+		    -h, --help         prints help for the command
+		        --advanced     when used with -h, prints advanced flags help
+	`)
+}
+
+func TestRun_Getenv(t *testing.T) {
+	var flagval string
+
+	root := &funcCommand{
+		SetupFn: func(params clingy.Parameters) {
+			flagval = params.Flag("test", "test flag", "", clingy.Getenv("TEST_FLAG")).(string)
+		},
+		ExecuteFn: func(ctx context.Context) error {
+			fmt.Fprint(clingy.Stdout(ctx), flagval)
+			return nil
+		},
+	}
+
+	env := Env("testcommand", root)
+	env.Getenv = func(key string) string { return "got from env" }
+
+	result := Capture(env, nil)
+	result.AssertValid(t)
+	result.AssertStdout(t, "got from env")
+}
+
+func TestRun_RequiredFlag(t *testing.T) {
+	root := &funcCommand{
+		SetupFn:   func(params clingy.Parameters) { params.Flag("test", "test flag", clingy.Required) },
+		ExecuteFn: func(ctx context.Context) error { return nil },
+	}
+
+	result := Run(root)
+	assert.That(t, !result.Ok)
+	assert.That(t, result.Err == nil)
+	result.AssertStdout(t, `
+		Errors:
+		    argument error: test: required flag missing
+
+		Usage:
+		    testcommand <--test string>
+
+		Flags:
+		        --test string    test flag (required)
+
+		Global flags:
+		    -h, --help         prints help for the command
+		        --advanced     when used with -h, prints advanced flags help
+	`)
 }

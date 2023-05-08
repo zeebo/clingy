@@ -15,6 +15,7 @@ type paramOpts struct {
 	adv    bool
 	hidden bool
 	bstyle bool
+	getenv string
 	typ    string
 	fns    []interface{}
 }

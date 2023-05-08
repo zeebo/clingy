@@ -13,7 +13,7 @@ func TestParams(t *testing.T) {
 		parseInt  = Transform(strconv.Atoi)
 
 		pm    = newParamsMaker()
-		ah    = newArgsHandler([]string{"foo", "--int", "100", "true", "10", "20", "30"}, nil)
+		ah    = newArgsHandler([]string{"foo", "--int", "100", "true", "10", "20", "30"}, nil, nil)
 		pos   = newParamsPositional(pm, ah)
 		flags = newParamsFlags(pm, ah)
 	)

@@ -1,10 +1,11 @@
 package clingy
 
+import "github.com/zeebo/errs/v2"
+
 type paramsFlags struct {
 	paramsTracker
-	pm  *paramsMaker
-	ah  *argsHandler
-	err error
+	pm *paramsMaker
+	ah *argsHandler
 }
 
 func newParamsFlags(ps *paramsMaker, ah *argsHandler) *paramsFlags {
@@ -16,7 +17,7 @@ func newParamsFlags(ps *paramsMaker, ah *argsHandler) *paramsFlags {
 
 func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Option) (val interface{}) {
 	p := pf.pm.newParam(name, desc, def, options...)
-	if pf.err != nil {
+	if p.err != nil {
 		return p.zero()
 	}
 	pf.include(p)
@@ -26,6 +27,7 @@ func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Optio
 		return p.zero()
 	} else if val == nil {
 		if p.def == nil {
+			p.err = errs.Errorf("%s: required flag missing", name)
 			return p.zero()
 		}
 		return p.def
@@ -36,11 +38,11 @@ func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Optio
 }
 
 func (pf *paramsFlags) getValue(p *param) (val interface{}, err error) {
-	vals, err := pf.ah.ConsumeFlag(p.name, p.bstyle)
+	vals, err := pf.ah.ConsumeFlag(p.name, p.bstyle, p.getenv)
 	if err != nil {
 		return nil, err
 	} else if vals == nil && p.short != 0 {
-		vals, err = pf.ah.ConsumeFlag(string(p.short), p.bstyle)
+		vals, err = pf.ah.ConsumeFlag(string(p.short), p.bstyle, p.getenv)
 		if err != nil {
 			return nil, err
 		}

@@ -10,13 +10,15 @@ type argsHandler struct {
 	args    []string
 	used    []bool
 	dynamic func(string) ([]string, error)
+	getenv  func(string) string
 }
 
-func newArgsHandler(args []string, dynamic func(string) ([]string, error)) *argsHandler {
+func newArgsHandler(args []string, dynamic func(string) ([]string, error), getenv func(string) string) *argsHandler {
 	return &argsHandler{
 		args:    args,
 		used:    make([]bool, len(args)),
 		dynamic: dynamic,
+		getenv:  getenv,
 	}
 }
 
@@ -66,7 +68,7 @@ func (ah *argsHandler) ConsumeArg(name string) (string, bool, error) {
 	return "", false, nil
 }
 
-func (ah *argsHandler) ConsumeFlag(name string, bstyle bool) (values []string, err error) {
+func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (values []string, err error) {
 	var used []uint
 
 	for i := uint(0); i < uint(len(ah.args)); i++ {
@@ -117,6 +119,13 @@ func (ah *argsHandler) ConsumeFlag(name string, bstyle bool) (values []string, e
 		values = append(values, ah.args[i+1])
 		used = append(used, i, i+1)
 		i++
+	}
+
+	// if the flag was not found and we have a getenv, try
+	if values == nil && getenv != "" && ah.getenv != nil {
+		if val := ah.getenv(getenv); val != "" {
+			values = append(values, val)
+		}
 	}
 
 	// if the flag was not found, try calling the dynamic callback

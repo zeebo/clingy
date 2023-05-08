@@ -97,11 +97,21 @@ var (
 	// Boolean causes the flag to be considered a "boolean style" flag where it does
 	// not look at the next positional argument if no value is specified.
 	Boolean = Option{func(po *paramOpts) { po.bstyle = true }}
+
+	// Required, when passed for the default value of a flag, causes the flag to be
+	// required and an error to occurr if it is not specified.
+	Required interface{}
 )
 
 // Short causes the flag to be able to be specified with a single character.
 func Short(c byte) Option {
 	return Option{func(po *paramOpts) { po.short = c }}
+}
+
+// Getenv causes the flag to be loaded with the value of the environment variable
+// if not explicitly specified in the argument list.
+func Getenv(key string) Option {
+	return Option{func(po *paramOpts) { po.getenv = key }}
 }
 
 // Transform takes a list of functions meant to parse and transform a string into some
@@ -152,8 +162,10 @@ type Parameters interface {
 type Flags interface {
 	// Flag creates a new flag. The return value is the value of the flag.
 	// If the Repeated option is specified, then the return type is a slice of
-	// whatever it would have been. Optional has no effect. The value provided
-	// in def is returned if the flag was not specified.
+	// whatever it would have been. Otherwise, if the Optional option is specified,
+	// the return type is a pointer to whatever it would have been. The value provided
+	// in def is returned if the flag was not specified. If def is null, then
+	// the flag is required, and an error will occur if it is not specified.
 	//
 	// Flag panics if the same name is defined twice, or if the same Short option
 	// is used twice.
@@ -200,6 +212,10 @@ type Environment struct {
 	// Wrap, if set, is called with the context and command that would have
 	// been executed. The no-op implementation is `return cmd.Execute(ctx)`.
 	Wrap func(ctx context.Context, cmd Command) (err error)
+
+	// Getenv, if set, is consulted for querying the process environment.
+	// If it is not set, os.Getenv is used.
+	Getenv func(key string) string
 
 	// SuggestionsMinEditDistance defines minimum Levenshtein distance to
 	// display suggestions when a command/subcommand is misspelled.

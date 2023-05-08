@@ -83,7 +83,8 @@ func checkFns(fns []interface{}) (reflect.Type, error) {
 	for _, fn := range fns {
 		ftyp := reflect.TypeOf(fn)
 		switch {
-		case ftyp.Kind() != reflect.Func,
+		case false,
+			ftyp.Kind() != reflect.Func,
 			ftyp.NumIn() != 1,
 			ftyp.NumOut() != 2,
 			ftyp.In(0) != typ,

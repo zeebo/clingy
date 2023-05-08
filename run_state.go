@@ -16,9 +16,9 @@ type runState struct {
 	advanced bool
 }
 
-func newRunState(name string, args []string, dynamic func(string) ([]string, error)) *runState {
+func newRunState(name string, args []string, dynamic func(string) ([]string, error), getenv func(string) string) *runState {
 	pm := newParamsMaker()
-	ah := newArgsHandler(args, dynamic)
+	ah := newArgsHandler(args, dynamic, getenv)
 
 	return &runState{
 		ah:     ah,

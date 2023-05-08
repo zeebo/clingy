@@ -27,7 +27,7 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 		env.Stderr = os.Stderr
 	}
 
-	st := newRunState(env.Name, env.Args, env.Dynamic)
+	st := newRunState(env.Name, env.Args, env.Dynamic, env.Getenv)
 	descs := collectDescs(st.gflags, fn)
 	st.setupFlags()
 

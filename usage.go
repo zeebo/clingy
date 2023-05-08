@@ -38,19 +38,27 @@ func printUsagePrefix(ctx context.Context, w io.Writer, st *runState, desc cmdDe
 	fmt.Fprintf(w, "Usage:\n")
 	fmt.Fprintf(w, "\t%s", st.name())
 
-	if st.advanced {
-		st.flags.params(func(p *param) {
-			if p == nil || p.hidden {
-				return
-			} else if p.rep {
-				fmt.Fprintf(w, " [--%s %s ...]", p.name, p.flagType())
-			} else if typ := p.flagType(); typ != "" {
-				fmt.Fprintf(w, " [--%s %s]", p.name, p.flagType())
-			} else {
-				fmt.Fprintf(w, " [--%s]", p.name)
-			}
-		})
-	} else if st.flags.getCount() > 0 {
+	req := 0
+	st.flags.params(func(p *param) {
+		if p == nil || p.hidden {
+			return
+		}
+		chars := "[]"
+		if p.def == Required {
+			chars = "<>"
+			req++
+		} else if !st.advanced {
+			return
+		}
+		if p.rep {
+			fmt.Fprintf(w, " %c--%s %s ...%c", chars[0], p.name, p.flagType(), chars[1])
+		} else if typ := p.flagType(); typ != "" {
+			fmt.Fprintf(w, " %c--%s %s%c", chars[0], p.name, p.flagType(), chars[1])
+		} else {
+			fmt.Fprintf(w, " %c--%s%c", chars[0], p.name, chars[1])
+		}
+	})
+	if !st.advanced && st.flags.getCount()-req > 0 {
 		fmt.Fprintf(w, " [flags]")
 	}
 
@@ -129,13 +137,26 @@ func printFlag(ctx context.Context, w io.Writer, p *param) {
 		fmt.Fprint(w, "    ")
 	}
 	fmt.Fprintf(w, "--%s %s\t%s", p.name, p.flagType(), p.desc)
+	if p.def == Required {
+		fmt.Fprintf(w, " (required)")
+	}
 	if p.rep {
 		fmt.Fprintf(w, " (repeated)")
 	}
+	if p.getenv != "" {
+		fmt.Fprintf(w, " (env %s)", p.getenv)
+	}
 	if !isZero(p.def) {
-		fmt.Fprintf(w, " (default %v)", deref(p.def))
+		fmt.Fprintf(w, " (default %v)", stringify(deref(p.def)))
 	}
 	fmt.Fprintln(w)
+}
+
+func stringify(x interface{}) string {
+	if s, ok := x.(string); ok {
+		return fmt.Sprintf("%q", s)
+	}
+	return fmt.Sprintf("%v", x)
 }
 
 func deref(x interface{}) interface{} {
