@@ -99,7 +99,7 @@ var (
 	Boolean = Option{func(po *paramOpts) { po.bstyle = true }}
 
 	// Required, when passed for the default value of a flag, causes the flag to be
-	// required and an error to occurr if it is not specified.
+	// required and an error to occur if it is not specified.
 	Required interface{}
 )
 
