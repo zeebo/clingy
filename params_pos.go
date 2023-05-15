@@ -45,7 +45,7 @@ func (pp *paramsPos) Arg(name, desc string, options ...Option) (val interface{})
 		}
 	} else {
 		var ok bool
-		val, ok, p.err = pp.ah.ConsumeArg(name)
+		val, ok, p.err = pp.ah.ConsumeArg()
 		if p.err != nil {
 			return p.zero()
 		} else if !ok {

@@ -13,6 +13,7 @@ type runState struct {
 	names    []string
 	errors   []error
 	help     bool
+	summary  bool
 	advanced bool
 }
 
@@ -37,6 +38,12 @@ func (st *runState) setupFlags() {
 		Transform(strconv.ParseBool),
 	).(bool)
 
+	st.summary = st.gflags.Flag(
+		"summary", "prints a summary of what commands are available", false,
+		Boolean,
+		Transform(strconv.ParseBool),
+	).(bool)
+
 	st.advanced = st.gflags.Flag(
 		"advanced", "when used with -h, prints advanced flags help", false,
 		Boolean,
@@ -55,11 +62,11 @@ func (st *runState) name() string {
 }
 
 func (st *runState) peekName() (string, bool, error) {
-	return st.ah.PeekArg("command")
+	return st.ah.PeekArg()
 }
 
 func (st *runState) consumeName() {
-	name, _, _ := st.ah.ConsumeArg("command") // must have been peeked
+	name, _, _ := st.ah.ConsumeArg() // must have been peeked
 	st.names = append(st.names, name)
 }
 

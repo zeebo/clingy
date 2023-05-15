@@ -35,6 +35,7 @@ func TestRun_HelpDisplay(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 
 			Use "testcommand [command] --help" for more information about a command.
@@ -55,6 +56,7 @@ func TestRun_HelpDisplay(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -77,6 +79,7 @@ func TestRun_HelpDisplay(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -227,6 +230,7 @@ func TestRun_OptionalPtrDeref(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
+		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 
@@ -249,6 +253,7 @@ func TestRun_GetenvUsage(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
+		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 }
@@ -295,6 +300,59 @@ func TestRun_RequiredFlag(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
+		        --summary      prints a summary of what commands are available
+		        --advanced     when used with -h, prints advanced flags help
+	`)
+}
+
+func TestRun_ExtraArguments(t *testing.T) {
+	root := &funcCommand{
+		SetupFn:   func(params clingy.Parameters) { params.Arg("arg", "some argument") },
+		ExecuteFn: func(ctx context.Context) error { return nil },
+	}
+
+	result := Run(root, "foo", "bar")
+	assert.That(t, !result.Ok)
+	assert.That(t, result.Err == nil)
+	result.AssertStdout(t, `
+		Errors:
+		    argument error: unknown arguments: ["bar"]
+
+		Usage:
+		    testcommand <arg>
+
+		Arguments:
+		    arg    some argument
+
+		Global flags:
+		    -h, --help         prints help for the command
+		        --summary      prints a summary of what commands are available
+		        --advanced     when used with -h, prints advanced flags help
+	`)
+}
+
+func TestRun_ExtraFlag(t *testing.T) {
+	root := &funcCommand{
+		SetupFn:   func(params clingy.Parameters) { params.Arg("arg", "some argument", clingy.Repeated) },
+		ExecuteFn: func(ctx context.Context) error { return nil },
+	}
+
+	result := Run(root, "foo", "bar", "--baz")
+	assert.That(t, !result.Ok)
+	assert.That(t, result.Err == nil)
+	result.AssertStdout(t, `
+		Errors:
+		    argument error: unknown flag: "--baz"
+
+		Usage:
+		    testcommand [arg ...]
+
+		Arguments:
+		    arg    some argument
+
+		Global flags:
+		    -h, --help         prints help for the command
+		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 }

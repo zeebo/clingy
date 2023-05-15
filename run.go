@@ -73,6 +73,12 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 		return true, true, nil
 	}
 
+	// print summary if required
+	if st.summary {
+		env.printSummary(ctx, st, desc)
+		return true, true, nil
+	}
+
 	// handle any errors parsing the arguments
 	if st.hasErrors() {
 		if !st.help {
@@ -94,6 +100,17 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	if desc.cmd == nil {
 		if len(desc.subcmds) > 0 {
 			env.appendUnknownCommandErrorWithSuggestions(st, desc.subcmds)
+		}
+		env.printUsage(ctx, st, desc)
+		return false, true, nil
+	}
+
+	// consume the remaining arguments. if there are any, error.
+	if args, err := st.ah.ConsumeArgs(); err != nil || len(args) > 0 {
+		if err != nil {
+			st.errors = append(st.errors, err)
+		} else {
+			st.errors = append(st.errors, errs.Tag("argument error").Errorf("unknown arguments: %q", args))
 		}
 		env.printUsage(ctx, st, desc)
 		return false, true, nil

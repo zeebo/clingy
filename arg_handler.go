@@ -23,9 +23,15 @@ func newArgsHandler(args []string, dynamic func(string) ([]string, error), geten
 }
 
 func (ah *argsHandler) PeekArgs() []string {
+	sep := false
 	out := make([]string, 0, len(ah.args))
 	for i, arg := range ah.args {
-		if ah.used[i] || arg == "--" {
+		if arg == "--" {
+			sep = true
+			continue
+		} else if ah.used[i] {
+			continue
+		} else if !sep && len(arg) > 1 && arg[0] == '-' {
 			continue
 		}
 		out = append(out, arg)
@@ -34,19 +40,34 @@ func (ah *argsHandler) PeekArgs() []string {
 }
 
 func (ah *argsHandler) ConsumeArgs() ([]string, error) {
-	out := ah.PeekArgs()
+	sep := false
+	out := make([]string, 0, len(ah.args))
+	for i, arg := range ah.args {
+		if arg == "--" {
+			sep = true
+			continue
+		} else if ah.used[i] {
+			continue
+		} else if !sep && len(arg) > 1 && arg[0] == '-' {
+			return nil, errs.Tag("argument error").Errorf("unknown flag: %q", arg)
+		}
+		out = append(out, arg)
+	}
 	for i := range ah.used {
 		ah.used[i] = true
 	}
 	return out, nil
 }
 
-func (ah *argsHandler) PeekArg(name string) (string, bool, error) {
+func (ah *argsHandler) PeekArg() (string, bool, error) {
+	sep := false
 	for i, arg := range ah.args {
-		if ah.used[i] || arg == "--" {
+		if arg == "--" {
+			sep = true
 			continue
-		}
-		if len(arg) > 1 && arg[0] == '-' {
+		} else if ah.used[i] {
+			continue
+		} else if !sep && len(arg) > 1 && arg[0] == '-' {
 			return "", false, errs.Tag("argument error").Errorf("unknown flag: %q", arg)
 		}
 		return arg, true, nil
@@ -54,12 +75,15 @@ func (ah *argsHandler) PeekArg(name string) (string, bool, error) {
 	return "", false, nil
 }
 
-func (ah *argsHandler) ConsumeArg(name string) (string, bool, error) {
+func (ah *argsHandler) ConsumeArg() (string, bool, error) {
+	sep := false
 	for i, arg := range ah.args {
-		if ah.used[i] || arg == "--" {
+		if arg == "--" {
+			sep = true
 			continue
-		}
-		if len(arg) > 1 && arg[0] == '-' {
+		} else if ah.used[i] {
+			continue
+		} else if !sep && len(arg) > 1 && arg[0] == '-' {
 			return "", false, errs.Tag("argument error").Errorf("unknown flag: %q", arg)
 		}
 		ah.used[i] = true
