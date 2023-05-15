@@ -26,6 +26,9 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 	if env.Stderr == nil {
 		env.Stderr = os.Stderr
 	}
+	if env.Getenv == nil {
+		env.Getenv = os.Getenv
+	}
 
 	st := newRunState(env.Name, env.Args, env.Dynamic, env.Getenv)
 	descs := collectDescs(st.gflags, fn)
