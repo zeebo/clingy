@@ -100,7 +100,7 @@ var (
 
 	// Required, when passed for the default value of a flag, causes the flag to be
 	// required and an error to occur if it is not specified.
-	Required interface{}
+	Required = func() interface{} { type anon struct{}; return anon{} }()
 )
 
 // Short causes the flag to be able to be specified with a single character.

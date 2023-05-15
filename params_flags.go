@@ -1,6 +1,10 @@
 package clingy
 
-import "github.com/zeebo/errs/v2"
+import (
+	"fmt"
+
+	"github.com/zeebo/errs/v2"
+)
 
 type paramsFlags struct {
 	paramsTracker
@@ -22,12 +26,18 @@ func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Optio
 	}
 	pf.include(p)
 
+	if p.opt && p.def == Required {
+		panic(fmt.Sprintf("optional flag with Required default value: %q", name))
+	}
+
 	val, p.err = pf.getValue(p)
 	if p.err != nil {
 		return p.zero()
 	} else if val == nil {
-		if p.def == nil {
+		if p.def == Required {
 			p.err = errs.Errorf("%s: required flag missing", name)
+			return p.zero()
+		} else if p.def == nil {
 			return p.zero()
 		}
 		return p.def
