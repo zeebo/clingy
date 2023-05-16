@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/zeebo/clingy"
 )
 
-func TestRun_UsageExhaustive(t *testing.T) {
+func TestUsage_Exhaustive(t *testing.T) {
 	root := &funcCommand{
 		SetupFn: func(params clingy.Parameters) {
 			n := 0
@@ -17,10 +18,12 @@ func TestRun_UsageExhaustive(t *testing.T) {
 
 			parseInt := clingy.Transform(strconv.Atoi)
 			parseBool := clingy.Transform(strconv.ParseBool)
+			parseDuration := clingy.Transform(time.ParseDuration)
 
 			_ = params.Flag("Flags.ValString", desc(), "").(string)
 			_ = params.Flag("Flags.ValInt", desc(), 0, parseInt).(int)
 			_ = params.Flag("Flags.ValBool", desc(), false, clingy.Boolean, parseBool).(bool)
+			_ = params.Flag("Flags.ValDur", desc(), time.Duration(0), parseDuration).(time.Duration)
 
 			params.Break()
 			_ = params.Flag("Flags.OptString", desc(), (*string)(nil), clingy.Optional).(*string)
@@ -73,37 +76,38 @@ func TestRun_UsageExhaustive(t *testing.T) {
 			    testcommand <--Flags.Req string> <--Flags.ReqRep string ...> <--Flags.ReqEnv string> <--Flags.ReqRepEnv string ...> [flags] <Args.ValString> <Args.ValInt> [Args.OptString [Args.OptInt [Args.RepInt ...]]]
 
 			Arguments:
-			    Args.ValString    desc 21
-			    Args.ValInt       desc 22
-			    Args.OptString    desc 23
-			    Args.OptInt       desc 24
-			    Args.RepInt       desc 25
+			    Args.ValString    desc 22
+			    Args.ValInt       desc 23
+			    Args.OptString    desc 24
+			    Args.OptInt       desc 25
+			    Args.RepInt       desc 26
 
 			Flags:
 			        --Flags.ValString string    desc 1
 			        --Flags.ValInt int          desc 2
 			        --Flags.ValBool             desc 3
+			        --Flags.ValDur duration     desc 4
 
-			        --Flags.OptString string    desc 4
-			        --Flags.OptInt int          desc 5
-			        --Flags.OptBool             desc 6
+			        --Flags.OptString string    desc 5
+			        --Flags.OptInt int          desc 6
+			        --Flags.OptBool             desc 7
 
-			        --Flags.RepString string    desc 7 (repeated)
-			        --Flags.RepInt int          desc 8 (repeated)
-			        --Flags.RepBool             desc 9 (repeated)
+			        --Flags.RepString string    desc 8 (repeated)
+			        --Flags.RepInt int          desc 9 (repeated)
+			        --Flags.RepBool             desc 10 (repeated)
 
-			        --Flags.Def string          desc 10 (default "some default")
-			        --Flags.DefRep string       desc 11 (repeated) (default [some default])
-			        --Flags.DefEnv string       desc 12 (env ENV) (default "some default")
-			        --Flags.DefRepEnv string    desc 13 (repeated) (env ENV) (default [some default])
+			        --Flags.Def string          desc 11 (default "some default")
+			        --Flags.DefRep string       desc 12 (repeated) (default [some default])
+			        --Flags.DefEnv string       desc 13 (env ENV) (default "some default")
+			        --Flags.DefRepEnv string    desc 14 (repeated) (env ENV) (default [some default])
 
-			        --Flags.Req string          desc 14 (required)
-			        --Flags.ReqRep string       desc 15 (required) (repeated)
-			        --Flags.ReqEnv string       desc 16 (required) (env ENV)
-			        --Flags.ReqRepEnv string    desc 17 (required) (repeated) (env ENV)
+			        --Flags.Req string          desc 15 (required)
+			        --Flags.ReqRep string       desc 16 (required) (repeated)
+			        --Flags.ReqEnv string       desc 17 (required) (env ENV)
+			        --Flags.ReqRepEnv string    desc 18 (required) (repeated) (env ENV)
 
-			        --Flags.Custom custom    desc 18
-			    -s, --Flags.Short string     desc 19
+			        --Flags.Custom custom    desc 19
+			    -s, --Flags.Short string     desc 20
 
 			Global flags:
 			    -h, --help         prints help for the command
@@ -117,46 +121,188 @@ func TestRun_UsageExhaustive(t *testing.T) {
 		result.AssertValid(t)
 		result.AssertStdout(t, `
 			Usage:
-			    testcommand [--Flags.ValString string] [--Flags.ValInt int] [--Flags.ValBool] [--Flags.OptString string] [--Flags.OptInt int] [--Flags.OptBool] [--Flags.RepString string ...] [--Flags.RepInt int ...] [--Flags.RepBool  ...] [--Flags.Def string] [--Flags.DefRep string ...] [--Flags.DefEnv string] [--Flags.DefRepEnv string ...] <--Flags.Req string> <--Flags.ReqRep string ...> <--Flags.ReqEnv string> <--Flags.ReqRepEnv string ...> [--Flags.Custom custom] [--Flags.Short string] [--Flags.Advanced string] <Args.ValString> <Args.ValInt> [Args.OptString [Args.OptInt [Args.RepInt ...]]]
+			    testcommand [--Flags.ValString string] [--Flags.ValInt int] [--Flags.ValBool] [--Flags.ValDur duration] [--Flags.OptString string] [--Flags.OptInt int] [--Flags.OptBool] [--Flags.RepString string ...] [--Flags.RepInt int ...] [--Flags.RepBool  ...] [--Flags.Def string] [--Flags.DefRep string ...] [--Flags.DefEnv string] [--Flags.DefRepEnv string ...] <--Flags.Req string> <--Flags.ReqRep string ...> <--Flags.ReqEnv string> <--Flags.ReqRepEnv string ...> [--Flags.Custom custom] [--Flags.Short string] [--Flags.Advanced string] <Args.ValString> <Args.ValInt> [Args.OptString [Args.OptInt [Args.RepInt ...]]]
 
 			Arguments:
-			    Args.ValString    desc 21
-			    Args.ValInt       desc 22
-			    Args.OptString    desc 23
-			    Args.OptInt       desc 24
-			    Args.RepInt       desc 25
+			    Args.ValString    desc 22
+			    Args.ValInt       desc 23
+			    Args.OptString    desc 24
+			    Args.OptInt       desc 25
+			    Args.RepInt       desc 26
 
 			Flags:
 			        --Flags.ValString string    desc 1
 			        --Flags.ValInt int          desc 2
 			        --Flags.ValBool             desc 3
+			        --Flags.ValDur duration     desc 4
 
-			        --Flags.OptString string    desc 4
-			        --Flags.OptInt int          desc 5
-			        --Flags.OptBool             desc 6
+			        --Flags.OptString string    desc 5
+			        --Flags.OptInt int          desc 6
+			        --Flags.OptBool             desc 7
 
-			        --Flags.RepString string    desc 7 (repeated)
-			        --Flags.RepInt int          desc 8 (repeated)
-			        --Flags.RepBool             desc 9 (repeated)
+			        --Flags.RepString string    desc 8 (repeated)
+			        --Flags.RepInt int          desc 9 (repeated)
+			        --Flags.RepBool             desc 10 (repeated)
 
-			        --Flags.Def string          desc 10 (default "some default")
-			        --Flags.DefRep string       desc 11 (repeated) (default [some default])
-			        --Flags.DefEnv string       desc 12 (env ENV) (default "some default")
-			        --Flags.DefRepEnv string    desc 13 (repeated) (env ENV) (default [some default])
+			        --Flags.Def string          desc 11 (default "some default")
+			        --Flags.DefRep string       desc 12 (repeated) (default [some default])
+			        --Flags.DefEnv string       desc 13 (env ENV) (default "some default")
+			        --Flags.DefRepEnv string    desc 14 (repeated) (env ENV) (default [some default])
 
-			        --Flags.Req string          desc 14 (required)
-			        --Flags.ReqRep string       desc 15 (required) (repeated)
-			        --Flags.ReqEnv string       desc 16 (required) (env ENV)
-			        --Flags.ReqRepEnv string    desc 17 (required) (repeated) (env ENV)
+			        --Flags.Req string          desc 15 (required)
+			        --Flags.ReqRep string       desc 16 (required) (repeated)
+			        --Flags.ReqEnv string       desc 17 (required) (env ENV)
+			        --Flags.ReqRepEnv string    desc 18 (required) (repeated) (env ENV)
 
-			        --Flags.Custom custom      desc 18
-			    -s, --Flags.Short string       desc 19
-			        --Flags.Advanced string    desc 20
+			        --Flags.Custom custom      desc 19
+			    -s, --Flags.Short string       desc 20
+			        --Flags.Advanced string    desc 21
 
 			Global flags:
 			    -h, --help         prints help for the command
 			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
+		`)
+	}
+}
+
+func TestUsage_MultilineDescription(t *testing.T) {
+	result := Capture(Env("testcommand", nil, "command", "-h"), func(cmds clingy.Commands) {
+		cmds.New("command", `single line description
+			The longer multiline description is here.
+			It contains multiple lines. Neato.
+		`, nil)
+	})
+	result.AssertValid(t)
+	result.AssertStdout(t, `
+		Usage:
+		    testcommand command
+
+		    single line description
+
+		    The longer multiline description is here.
+		    It contains multiple lines. Neato.
+
+		Global flags:
+		    -h, --help         prints help for the command
+		        --summary      prints a summary of what commands are available
+		        --advanced     when used with -h, prints advanced flags help
+	`)
+}
+
+func TestUsage_DistanceSuggestions(t *testing.T) {
+	cmds := func(cmds clingy.Commands) {
+		cmds.New("cmd1", "d1", nil)
+		cmds.New("cmd2", "d2", nil)
+		cmds.New("cmb3", "d3", nil)
+		cmds.Group("grp1", "g1", func() {
+			cmds.New("cmd4", "d4", nil)
+		})
+	}
+
+	{
+		env := Env("testcommand", nil, "amd4")
+
+		result := Capture(env, cmds)
+		result.AssertStdout(t, `
+			Errors:
+			    unknown command: "amd4". did you mean:
+			        cmd1
+			        cmd2
+
+			Usage:
+			    testcommand [command]
+
+			Available commands:
+			    cmd1    d1
+			    cmd2    d2
+			    cmb3    d3
+			    grp1    g1
+
+			Global flags:
+			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
+			        --advanced     when used with -h, prints advanced flags help
+
+			Use "testcommand [command] --help" for more information about a command.
+		`)
+	}
+
+	{
+		env := Env("testcommand", nil, "grp1", "--foo")
+
+		result := Capture(env, cmds)
+		result.AssertStdout(t, `
+			Errors:
+			    argument error: unknown flag: "--foo"
+
+			Usage:
+			    testcommand grp1 [command]
+
+			    g1
+
+			Available commands:
+			    cmd4    d4
+
+			Global flags:
+			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
+			        --advanced     when used with -h, prints advanced flags help
+
+			Use "testcommand grp1 [command] --help" for more information about a command.
+		`)
+	}
+
+	{
+		env := Env("testcommand", nil, "amd4")
+		env.SuggestionsMinEditDistance = -1
+
+		result := Capture(env, cmds)
+		result.AssertStdout(t, `
+			Errors:
+			    unknown command: "amd4"
+
+			Usage:
+			    testcommand [command]
+
+			Available commands:
+			    cmd1    d1
+			    cmd2    d2
+			    cmb3    d3
+			    grp1    g1
+
+			Global flags:
+			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
+			        --advanced     when used with -h, prints advanced flags help
+
+			Use "testcommand [command] --help" for more information about a command.
+		`)
+	}
+
+	{
+		env := Env("testcommand", nil, "grp1", "--foo")
+		env.SuggestionsMinEditDistance = -1
+
+		result := Capture(env, cmds)
+		result.AssertStdout(t, `
+			Errors:
+			    argument error: unknown flag: "--foo"
+
+			Usage:
+			    testcommand grp1 [command]
+
+			    g1
+
+			Available commands:
+			    cmd4    d4
+
+			Global flags:
+			    -h, --help         prints help for the command
+			        --summary      prints a summary of what commands are available
+			        --advanced     when used with -h, prints advanced flags help
+
+			Use "testcommand grp1 [command] --help" for more information about a command.
 		`)
 	}
 }

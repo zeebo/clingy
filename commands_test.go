@@ -8,7 +8,13 @@ import (
 
 func TestCollectDescs(t *testing.T) {
 	assert.DeepEqual(t, collectDescs(nil, func(cmds Commands) {
-		cmds.New("foo0", "foo0", nil)
+		cmds.New("foo0", `foo0
+			foo0 has a multiline description that will be used
+			when full help is printed for the command but is
+			elided when short help is printed.
+
+			the multiline description is trimmed of space on the left.
+		`, nil)
 		cmds.Group("bar", "bar", func() {
 			cmds.New("bar0", "bar0", nil)
 			cmds.New("bar1", "bar1", nil)
@@ -19,7 +25,7 @@ func TestCollectDescs(t *testing.T) {
 		})
 		cmds.New("foo1", "foo1", nil)
 	}), []cmdDesc{
-		{"foo0", "foo0", "", nil, nil},
+		{"foo0", "foo0", "foo0 has a multiline description that will be used\nwhen full help is printed for the command but is\nelided when short help is printed.\n\nthe multiline description is trimmed of space on the left.", nil, nil},
 		{"bar", "bar", "", nil, []cmdDesc{
 			{"bar0", "bar0", "", nil, nil},
 			{"bar1", "bar1", "", nil, nil},

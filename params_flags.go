@@ -21,9 +21,6 @@ func newParamsFlags(ps *paramsMaker, ah *argsHandler) *paramsFlags {
 
 func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Option) (val interface{}) {
 	p := pf.pm.newParam(name, desc, def, options...)
-	if p.err != nil {
-		return p.zero()
-	}
 	pf.include(p)
 
 	if p.opt && p.def == Required {

@@ -23,9 +23,6 @@ func newParamsPositional(pm *paramsMaker, ah *argsHandler) *paramsPos {
 
 func (pp *paramsPos) Arg(name, desc string, options ...Option) (val interface{}) {
 	p := pp.pm.newParam(name, desc, nil, options...)
-	if p.err != nil {
-		return p.zero()
-	}
 	pp.include(p)
 
 	// check for repeated/optional consistency

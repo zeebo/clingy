@@ -18,15 +18,17 @@ func (env *Environment) appendUnknownCommandErrorWithSuggestions(st *runState, d
 
 	name, ok, err := st.peekName()
 	if ok {
-		suggestionsString := fmt.Sprintf("%q for %q", name, st.name())
+		var sbuild strings.Builder
+		fmt.Fprintf(&sbuild, "%q", name)
 		if suggestions := suggestionsFor(name, descs, dist); len(suggestions) > 0 {
-			suggestionsString += "\n\n\tMaybe you meant:\n"
+			sbuild.WriteString(". did you mean:")
 			for _, s := range suggestions {
-				suggestionsString += fmt.Sprintf("\t\t%v\n", s)
+				sbuild.WriteString("\n\t\t")
+				sbuild.WriteString(s)
 			}
 		}
 
-		st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%s", suggestionsString))
+		st.errors = append(st.errors, errs.Tag("unknown command").Errorf("%s", sbuild.String()))
 	}
 	if err != nil {
 		st.errors = append(st.errors, err)

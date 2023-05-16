@@ -7,10 +7,7 @@ import (
 	"github.com/zeebo/errs/v2"
 )
 
-// Run calls the fn to create and execute the tree of commands and global flags.
-// It returns a boolean indicating if the parsing/dispatching of the command
-// was successful. The error is the returned error from any executed command.
-func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error) {
+func (env *Environment) fillDefaults() {
 	if env.Name == "" {
 		env.Name = os.Args[0]
 	}
@@ -29,7 +26,13 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 	if env.Getenv == nil {
 		env.Getenv = os.Getenv
 	}
+}
 
+// Run calls the fn to create and execute the tree of commands and global flags.
+// It returns a boolean indicating if the parsing/dispatching of the command
+// was successful. The error is the returned error from any executed command.
+func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error) {
+	env.fillDefaults()
 	st := newRunState(env.Name, env.Args, env.Dynamic, env.Getenv)
 	descs := collectDescs(st.gflags, fn)
 	st.setupFlags()
@@ -83,10 +86,7 @@ func (env *Environment) dispatchDesc(ctx context.Context, st *runState, desc cmd
 	if st.hasErrors() {
 		if !st.help {
 			st.params(func(p *param) {
-				if p == nil {
-					return
-				}
-				if p.err != nil {
+				if p != nil && p.err != nil {
 					st.errors = append(st.errors, errs.Tag("argument error").Wrap(p.err))
 				}
 			})
