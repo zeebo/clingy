@@ -47,10 +47,10 @@ func (p *param) flagType() string {
 	if p.paramOpts.typ != "" {
 		return p.paramOpts.typ
 	}
-	switch p.typ {
-	case boolType:
+	switch {
+	case p.typ == boolType && p.bstyle:
 		return ""
-	case durationType:
+	case p.typ == durationType:
 		return "duration"
 	default:
 		return p.typ.Name()
