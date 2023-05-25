@@ -38,6 +38,13 @@ func printUsagePrefix(ctx context.Context, w io.Writer, st *runState, desc cmdDe
 	fmt.Fprintf(w, "Usage:\n")
 	fmt.Fprintf(w, "\t%s", st.name())
 
+	padLeft := func(s string) string {
+		if s != "" {
+			return " " + s
+		}
+		return ""
+	}
+
 	req := 0
 	st.flags.params(func(p *param) {
 		if p == nil || p.hidden {
@@ -51,11 +58,9 @@ func printUsagePrefix(ctx context.Context, w io.Writer, st *runState, desc cmdDe
 			return
 		}
 		if p.rep {
-			fmt.Fprintf(w, " %c--%s %s ...%c", chars[0], p.name, p.flagType(), chars[1])
-		} else if typ := p.flagType(); typ != "" {
-			fmt.Fprintf(w, " %c--%s %s%c", chars[0], p.name, p.flagType(), chars[1])
+			fmt.Fprintf(w, " %c--%s%s ...%c", chars[0], p.name, padLeft(p.flagType()), chars[1])
 		} else {
-			fmt.Fprintf(w, " %c--%s%c", chars[0], p.name, chars[1])
+			fmt.Fprintf(w, " %c--%s%s%c", chars[0], p.name, padLeft(p.flagType()), chars[1])
 		}
 	})
 	if !st.advanced && st.flags.getCount()-req > 0 {
