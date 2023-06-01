@@ -3,13 +3,14 @@ package clingy
 import (
 	"context"
 	"os"
+	"path/filepath"
 
 	"github.com/zeebo/errs/v2"
 )
 
 func (env *Environment) fillDefaults() {
 	if env.Name == "" {
-		env.Name = os.Args[0]
+		env.Name = filepath.Base(os.Args[0])
 	}
 	if env.Args == nil {
 		env.Args = os.Args[1:]
