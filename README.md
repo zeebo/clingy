@@ -63,8 +63,8 @@ import (
 func main() {
 	ctx := context.Background()
 	ok, err := clingy.Environment{
-    Args: []string{"group", "hello", "-s", "zeebo"},
-  }.Run(ctx, func(cmds clingy.Commands) {
+		Args: []string{"group", "hello", "-s", "zeebo"},
+	}.Run(ctx, func(cmds clingy.Commands) {
 		cmds.Group("group", "a group of commands", func() {
 			cmds.New("hello", "print a greeting", new(cmdHello))
 		})
