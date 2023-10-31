@@ -8,6 +8,9 @@
 </p>
 </p>
 
+<hr>
+
+[Simple example](https://go.dev/play/p/YnZ4ZNyr7BQ)
 ```go
 package main
 
@@ -15,7 +18,43 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
+
+	"github.com/zeebo/clingy"
+)
+
+func main() {
+	ctx := context.Background()
+	ok, err := clingy.Environment{
+		Root: new(cmdHello),
+	}.Run(ctx, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
+	}
+	if !ok || err != nil {
+		os.Exit(1)
+	}
+}
+
+type cmdHello struct{}
+
+func (c *cmdHello) Setup(params clingy.Parameters) {}
+func (c *cmdHello) Execute(ctx context.Context) error {
+	fmt.Fprintln(clingy.Stdout(ctx), "Hello world!")
+	return nil
+}
+```
+
+<hr>
+
+[More complete example](https://go.dev/play/p/-qCflV7eLxi)
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/zeebo/clingy"
@@ -23,7 +62,9 @@ import (
 
 func main() {
 	ctx := context.Background()
-	_, err := clingy.Environment{}.Run(ctx, func(cmds clingy.Commands) {
+	ok, err := clingy.Environment{
+    Args: []string{"group", "hello", "-s", "zeebo"},
+  }.Run(ctx, func(cmds clingy.Commands) {
 		cmds.Group("group", "a group of commands", func() {
 			cmds.New("hello", "print a greeting", new(cmdHello))
 		})
@@ -31,6 +72,8 @@ func main() {
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%+v\n", err)
+	}
+	if !ok || err != nil {
 		os.Exit(1)
 	}
 }
