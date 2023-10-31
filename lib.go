@@ -12,8 +12,8 @@
 //
 //	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 //	defer cancel()
-//	env := clingy.Environment{}
-//	ok, err := env.Run(ctx, func(cmds clingy.Commands) {
+//
+//	ok, err := clingy.Environment{}.Run(ctx, func(cmds clingy.Commands) {
 //		cmds.Group("files", "Commands related to files", func() {
 //			cmds.New("copy", "Copy a file", new(cmdFilesCopy))
 //			cmds.New("delete", "Delete a file", new(cmdFilesDelete))
@@ -45,10 +45,10 @@
 //		c.second = params.Arg("second", "second required argument").(string)
 //	}
 //
-//	func (c *cmdExample) Execute(ctx clingy.Context) error {
-//		fmt.Println(c.prefix, "verbose", c.verbose)
-//		fmt.Println(c.prefix, "first", c.first)
-//		fmt.Println(c.prefix, "second", c.second)
+//	func (c *cmdExample) Execute(ctx context.Context) error {
+//		fmt.Fprintln(clingy.Stdout(ctx), c.prefix, "verbose", c.verbose)
+//		fmt.Fprintln(clingy.Stdout(ctx), c.prefix, "first", c.first)
+//		fmt.Fprintln(clingy.Stdout(ctx), c.prefix, "second", c.second)
 //		return nil
 //	}
 //

@@ -7,3 +7,77 @@
   <img src="https://img.shields.io/badge/license-CC0--1.0-blue?style=flat-square" />
 </p>
 </p>
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"strconv"
+
+	"github.com/zeebo/clingy"
+)
+
+func main() {
+	ctx := context.Background()
+	_, err := clingy.Environment{}.Run(ctx, func(cmds clingy.Commands) {
+		cmds.Group("group", "a group of commands", func() {
+			cmds.New("hello", "print a greeting", new(cmdHello))
+		})
+		cmds.New("panic", "oh no! a panic!", new(cmdPanic))
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%+v\n", err)
+		os.Exit(1)
+	}
+}
+
+type cmdHello struct {
+	name    string
+	spanish bool
+}
+
+func (c *cmdHello) Setup(params clingy.Parameters) {
+	c.spanish = params.Flag("spanish", "greet in spanish", false,
+		clingy.Short('s'),
+		clingy.Transform(strconv.ParseBool),
+		clingy.Boolean,
+	).(bool)
+
+	c.name = params.Arg("name", "person to greet").(string)
+}
+
+func (c *cmdHello) Execute(ctx context.Context) error {
+	if c.spanish {
+		fmt.Fprintln(clingy.Stdout(ctx), "Hola", c.name)
+	} else {
+		fmt.Fprintln(clingy.Stdout(ctx), "Hello", c.name)
+	}
+	return nil
+}
+
+type cmdPanic struct {
+	frames int
+}
+
+func (c *cmdPanic) Setup(params clingy.Parameters) {
+	c.frames = params.Arg("frames", "additional stack frames before panic",
+		clingy.Transform(strconv.Atoi),
+	).(int)
+}
+
+func (c *cmdPanic) Execute(ctx context.Context) error {
+	var recur func(int)
+	recur = func(x int) {
+		if x <= 0 {
+			panic("!!")
+		}
+		recur(x - 1)
+	}
+	recur(c.frames)
+	panic("unreachable")
+}
+```
