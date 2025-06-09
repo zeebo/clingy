@@ -231,7 +231,6 @@ func TestRun_OptionalPtrDeref(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
-		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 
@@ -254,7 +253,6 @@ func TestRun_GetenvUsage(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
-		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 }
@@ -301,7 +299,6 @@ func TestRun_RequiredFlag(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
-		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 }
@@ -327,7 +324,6 @@ func TestRun_ExtraArguments(t *testing.T) {
 
 		Global flags:
 		    -h, --help         prints help for the command
-		        --summary      prints a summary of what commands are available
 		        --advanced     when used with -h, prints advanced flags help
 	`)
 }
@@ -354,7 +350,6 @@ func TestRun_ExtraFlag(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -380,7 +375,6 @@ func TestRun_ExtraFlag(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -415,7 +409,6 @@ func TestRun_InvalidFlags(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -435,7 +428,6 @@ func TestRun_InvalidFlags(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -455,7 +447,6 @@ func TestRun_InvalidFlags(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -475,7 +466,6 @@ func TestRun_InvalidFlags(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -504,7 +494,6 @@ func TestRun_InvalidArg(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -524,7 +513,6 @@ func TestRun_InvalidArg(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}
@@ -551,7 +539,6 @@ func TestRun_InvalidArg(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	}

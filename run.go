@@ -36,7 +36,7 @@ func (env Environment) Run(ctx context.Context, fn func(Commands)) (bool, error)
 	env.fillDefaults()
 	st := newRunState(env.Name, env.Args, env.Dynamic, env.Getenv)
 	descs := collectDescs(st.gflags, fn)
-	st.setupFlags()
+	st.setupFlags(len(descs) > 0)
 
 	executed, _, err := env.dispatchDesc(ctx, st, cmdDesc{
 		cmd:     env.Root,

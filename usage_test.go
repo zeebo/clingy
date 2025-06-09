@@ -118,7 +118,6 @@ func TestUsage_Exhaustive(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	})
@@ -170,7 +169,6 @@ func TestUsage_Exhaustive(t *testing.T) {
 
 			Global flags:
 			    -h, --help         prints help for the command
-			        --summary      prints a summary of what commands are available
 			        --advanced     when used with -h, prints advanced flags help
 		`)
 	})
