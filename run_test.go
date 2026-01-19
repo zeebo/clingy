@@ -630,3 +630,29 @@ func TestRun_Wrap(t *testing.T) {
 	result := Capture(env, nil)
 	assert.That(t, errors.Is(result.Err, errs.Tag("sentinel")))
 }
+
+func TestRun_RepeatedFlagWithDefault(t *testing.T) {
+	var values []string
+
+	root := &funcCommand{
+		SetupFn: func(params clingy.Parameters) {
+			values = params.Flag("values", "repeated flag", []string{"default1", "default2"}, clingy.Repeated).([]string)
+		},
+		ExecuteFn: func(ctx context.Context) error {
+			fmt.Fprint(clingy.Stdout(ctx), strings.Join(values, ","))
+			return nil
+		},
+	}
+
+	{ // no flag provided, should use default
+		result := Run(root)
+		result.AssertValid(t)
+		result.AssertStdout(t, "default1,default2")
+	}
+
+	{ // flag provided, should use provided values
+		result := Run(root, "--values", "foo", "--values", "bar", "--values", "baz")
+		result.AssertValid(t)
+		result.AssertStdout(t, "foo,bar,baz")
+	}
+}

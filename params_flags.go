@@ -55,6 +55,12 @@ func (pf *paramsFlags) getValue(p *param) (val interface{}, err error) {
 		}
 	}
 	if p.rep {
+		// vals is a slice of strings and the following are not equal:
+		//    var x any = []string(nil)
+		//    var x any = nil
+		if vals == nil {
+			return nil, nil
+		}
 		return vals, nil
 	} else if len(vals) == 0 {
 		return nil, nil
