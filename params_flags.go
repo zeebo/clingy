@@ -45,14 +45,13 @@ func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Optio
 }
 
 func (pf *paramsFlags) getValue(p *param) (val interface{}, err error) {
-	vals, err := pf.ah.consumeFlag(p.name, p.bstyle)
+	names := []string{p.name}
+	if p.short != 0 {
+		names = append(names, string(p.short))
+	}
+	vals, err := pf.ah.consumeFlags(names, p.bstyle)
 	if err != nil {
 		return nil, err
-	} else if vals == nil && p.short != 0 {
-		vals, err = pf.ah.consumeFlag(string(p.short), p.bstyle)
-		if err != nil {
-			return nil, err
-		}
 	}
 	if vals == nil {
 		vals, err = pf.ah.flagDefault(p.name, p.getenv)
