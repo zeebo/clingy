@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -330,4 +331,26 @@ func TestUsage_NestedNilPointerDefault(t *testing.T) {
 	result = Run(cmd, "--help")
 	result.AssertValid(t)
 	result.AssertStdoutContains(t, "(default <nil>)")
+}
+
+func TestUsage_RequiredAdvancedFlag(t *testing.T) {
+	cmd := &funcCommand{
+		SetupFn: func(p clingy.Parameters) {
+			p.Flag("secret", "advanced required flag", clingy.Required, clingy.Advanced)
+		},
+		ExecuteFn: func(context.Context) error { return nil },
+	}
+	result := Run(cmd, "--help")
+	result.AssertValid(t)
+	if strings.Contains(result.Stdout, "--secret") {
+		t.Fatalf("advanced flag visible in ordinary help: %s", result.Stdout)
+	}
+	result = Run(cmd, "--help", "--advanced")
+	result.AssertValid(t)
+	result.AssertStdoutContains(t, "<--secret string>")
+	result.AssertStdoutContains(t, "advanced required flag (required)")
+	result = Run(cmd)
+	if result.Ok {
+		t.Fatal("missing advanced flag was not required")
+	}
 }

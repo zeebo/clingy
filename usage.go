@@ -47,7 +47,7 @@ func printUsagePrefix(ctx context.Context, w io.Writer, st *runState, desc cmdDe
 
 	req := 0
 	st.flags.params(func(p *param) {
-		if p == nil || p.hidden {
+		if p == nil || p.hidden || (p.adv && !st.advanced) {
 			return
 		}
 		chars := "[]"
