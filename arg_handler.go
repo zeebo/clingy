@@ -22,36 +22,48 @@ func newArgsHandler(args []string, dynamic func(string) ([]string, error), geten
 	}
 }
 
-func (ah *argsHandler) PeekArgs() []string {
+// walkArgs visits unused positional arguments until visit returns false.
+// Unknown flags are either skipped (for PeekArgs) or reported as errors.
+func (ah *argsHandler) walkArgs(skipFlags bool, visit func(int) bool) error {
 	sep := false
-	out := make([]string, 0, len(ah.args))
 	for i, arg := range ah.args {
 		if !sep && arg == "--" {
 			sep = true
 			continue
-		} else if ah.used[i] {
-			continue
-		} else if !sep && len(arg) > 1 && arg[0] == '-' {
+		}
+		if ah.used[i] {
 			continue
 		}
-		out = append(out, arg)
+		if !sep && len(arg) > 1 && arg[0] == '-' {
+			if skipFlags {
+				continue
+			}
+			return errs.Tag("argument error").Errorf("unknown flag: %q", arg)
+		}
+		if !visit(i) {
+			break
+		}
 	}
+	return nil
+}
+
+func (ah *argsHandler) PeekArgs() []string {
+	out := make([]string, 0, len(ah.args))
+	_ = ah.walkArgs(true, func(i int) bool {
+		out = append(out, ah.args[i])
+		return true
+	})
 	return out
 }
 
 func (ah *argsHandler) ConsumeArgs() ([]string, error) {
-	sep := false
 	out := make([]string, 0, len(ah.args))
-	for i, arg := range ah.args {
-		if !sep && arg == "--" {
-			sep = true
-			continue
-		} else if ah.used[i] {
-			continue
-		} else if !sep && len(arg) > 1 && arg[0] == '-' {
-			return nil, errs.Tag("argument error").Errorf("unknown flag: %q", arg)
-		}
-		out = append(out, arg)
+	err := ah.walkArgs(false, func(i int) bool {
+		out = append(out, ah.args[i])
+		return true
+	})
+	if err != nil {
+		return nil, err
 	}
 	for i := range ah.used {
 		ah.used[i] = true
@@ -59,37 +71,27 @@ func (ah *argsHandler) ConsumeArgs() ([]string, error) {
 	return out, nil
 }
 
+func (ah *argsHandler) nextArg() (int, error) {
+	index := -1
+	err := ah.walkArgs(false, func(i int) bool { index = i; return false })
+	return index, err
+}
+
 func (ah *argsHandler) PeekArg() (string, bool, error) {
-	sep := false
-	for i, arg := range ah.args {
-		if !sep && arg == "--" {
-			sep = true
-			continue
-		} else if ah.used[i] {
-			continue
-		} else if !sep && len(arg) > 1 && arg[0] == '-' {
-			return "", false, errs.Tag("argument error").Errorf("unknown flag: %q", arg)
-		}
-		return arg, true, nil
+	i, err := ah.nextArg()
+	if i < 0 {
+		return "", false, err
 	}
-	return "", false, nil
+	return ah.args[i], true, nil
 }
 
 func (ah *argsHandler) ConsumeArg() (string, bool, error) {
-	sep := false
-	for i, arg := range ah.args {
-		if !sep && arg == "--" {
-			sep = true
-			continue
-		} else if ah.used[i] {
-			continue
-		} else if !sep && len(arg) > 1 && arg[0] == '-' {
-			return "", false, errs.Tag("argument error").Errorf("unknown flag: %q", arg)
-		}
-		ah.used[i] = true
-		return arg, true, nil
+	i, err := ah.nextArg()
+	if i < 0 {
+		return "", false, err
 	}
-	return "", false, nil
+	ah.used[i] = true
+	return ah.args[i], true, nil
 }
 
 func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (values []string, err error) {
