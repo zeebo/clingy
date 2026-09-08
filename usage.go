@@ -165,7 +165,7 @@ func stringify(x any) string {
 }
 
 func deref(x any) any {
-	if rv := reflect.ValueOf(x); rv.Kind() == reflect.Pointer {
+	if rv := reflect.ValueOf(x); rv.Kind() == reflect.Pointer && !rv.IsNil() {
 		return deref(rv.Elem().Interface())
 	}
 	return x
