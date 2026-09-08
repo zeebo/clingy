@@ -115,7 +115,7 @@ var (
 
 	// Required, when passed for the default value of a flag, causes the flag to be
 	// required and an error to occur if it is not specified.
-	Required = func() interface{} { type anon struct{}; return anon{} }()
+	Required = func() any { type anon struct{}; return anon{} }()
 )
 
 // Short causes the flag to be able to be specified with a single character.
@@ -141,7 +141,7 @@ func Getenv(key string) Option {
 //
 //	args.New(..., Transform(f1), Transform(f2))
 //	args.New(..., Transform(f1, f2))
-func Transform(fns ...interface{}) Option {
+func Transform(fns ...any) Option {
 	return Option{func(po *paramOpts) { po.fns = append(po.fns, fns...) }}
 }
 
@@ -170,7 +170,7 @@ type Parameters interface {
 	// are created after a Repeated argument is created. Arg panics if any arguments
 	// that are not Optional or Repeated are created after an Optional argument is
 	// created.
-	Arg(name, desc string, options ...Option) interface{}
+	Arg(name, desc string, options ...Option) any
 }
 
 // Flags allows the creation of flags as well as retreiving their values.
@@ -185,7 +185,7 @@ type Flags interface {
 	//
 	// Flag panics if the same name is defined twice, or if the same Short option
 	// is used twice.
-	Flag(name, desc string, def interface{}, options ...Option) interface{}
+	Flag(name, desc string, def any, options ...Option) any
 
 	// Break inserts a line break in the usage output of the flags.
 	Break()

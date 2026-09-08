@@ -157,15 +157,15 @@ func printFlag(ctx context.Context, w io.Writer, p *param) {
 	fmt.Fprintln(w)
 }
 
-func stringify(x interface{}) string {
+func stringify(x any) string {
 	if s, ok := x.(string); ok {
 		return fmt.Sprintf("%q", s)
 	}
 	return fmt.Sprintf("%v", x)
 }
 
-func deref(x interface{}) interface{} {
-	if rv := reflect.ValueOf(x); rv.Kind() == reflect.Ptr {
+func deref(x any) any {
+	if rv := reflect.ValueOf(x); rv.Kind() == reflect.Pointer {
 		return deref(rv.Elem().Interface())
 	}
 	return x
@@ -177,7 +177,7 @@ func printUsageSuffix(ctx context.Context, w io.Writer, st *runState, subcmds bo
 	}
 }
 
-func isZero(x interface{}) bool {
+func isZero(x any) bool {
 	rv := reflect.ValueOf(x)
 	return !rv.IsValid() || rv.IsZero() || (rv.Kind() == reflect.Slice && rv.Len() == 0)
 }

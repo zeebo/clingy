@@ -21,7 +21,7 @@ func newParamsPositional(pm *paramsMaker, ah *argsHandler) *paramsPos {
 	}
 }
 
-func (pp *paramsPos) Arg(name, desc string, options ...Option) (val interface{}) {
+func (pp *paramsPos) Arg(name, desc string, options ...Option) (val any) {
 	p := pp.pm.newParam(name, desc, nil, options...)
 	pp.include(p)
 

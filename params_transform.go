@@ -7,7 +7,7 @@ import (
 	"github.com/zeebo/errs/v2"
 )
 
-func transformParam(arg *param, val interface{}) (_ interface{}, err error) {
+func transformParam(arg *param, val any) (_ any, err error) {
 	call := callOne
 	if arg.rep {
 		call = callMany
@@ -51,13 +51,13 @@ func callOne(rval, rfn reflect.Value) (reflect.Value, error) {
 }
 
 var (
-	stringType   = reflect.TypeOf("")
+	stringType   = reflect.TypeFor[string]()
 	boolType     = reflect.TypeOf(false)
-	durationType = reflect.TypeOf(time.Duration(0))
-	errorType    = reflect.TypeOf((*error)(nil)).Elem()
+	durationType = reflect.TypeFor[time.Duration]()
+	errorType    = reflect.TypeFor[error]()
 )
 
-func guessType(fns []interface{}) reflect.Type {
+func guessType(fns []any) reflect.Type {
 	typ := stringType
 	if len(fns) > 0 {
 		ftyp := reflect.TypeOf(fns[len(fns)-1])
@@ -68,7 +68,7 @@ func guessType(fns []interface{}) reflect.Type {
 	return typ
 }
 
-func zero(typ reflect.Type) interface{} {
+func zero(typ reflect.Type) any {
 	return reflect.Zero(typ).Interface()
 }
 
@@ -78,7 +78,7 @@ func ptrTo(x reflect.Value) reflect.Value {
 	return y
 }
 
-func checkFns(fns []interface{}) (reflect.Type, error) {
+func checkFns(fns []any) (reflect.Type, error) {
 	typ := stringType
 	for _, fn := range fns {
 		ftyp := reflect.TypeOf(fn)
