@@ -314,3 +314,20 @@ func TestUsage_DistanceSuggestions(t *testing.T) {
 		`)
 	}
 }
+
+func TestUsage_NestedNilPointerDefault(t *testing.T) {
+	var def *string
+	cmd := &funcCommand{
+		SetupFn: func(p clingy.Parameters) {
+			_ = p.Flag("value", "pointer default", &def, clingy.Optional,
+				clingy.Transform(func(s string) (*string, error) { return &s, nil }),
+			).(**string)
+		},
+		ExecuteFn: func(context.Context) error { return nil },
+	}
+	result := Run(cmd)
+	result.AssertValid(t)
+	result = Run(cmd, "--help")
+	result.AssertValid(t)
+	result.AssertStdoutContains(t, "(default <nil>)")
+}
