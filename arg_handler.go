@@ -93,15 +93,23 @@ func (ah *argsHandler) ConsumeArg() (string, bool, error) {
 }
 
 func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (values []string, err error) {
-	vals, err := ah.consumeFlag(name, bstyle)
+	vals, err := ah.consumeFlags([]string{name}, bstyle)
 	if err != nil || vals != nil {
 		return vals, err
 	}
 	return ah.flagDefault(name, getenv)
 }
 
-func (ah *argsHandler) consumeFlag(name string, bstyle bool) (values []string, err error) {
+func (ah *argsHandler) consumeFlags(names []string, bstyle bool) (values []string, err error) {
 	var used []uint
+	matches := func(name string) bool {
+		for _, candidate := range names {
+			if name == candidate {
+				return true
+			}
+		}
+		return false
+	}
 
 	for i := uint(0); i < uint(len(ah.args)); i++ {
 		arg := ah.args[i]
@@ -127,14 +135,14 @@ func (ah *argsHandler) consumeFlag(name string, bstyle bool) (values []string, e
 		}
 
 		// check for --foo=bar form
-		if idx := strings.IndexByte(arg, '='); idx >= 0 && name == arg[:idx] {
+		if idx := strings.IndexByte(arg, '='); idx >= 0 && matches(arg[:idx]) {
 			values = append(values, arg[idx+1:])
 			used = append(used, i)
 			continue
 		}
 
 		// check if the name matches
-		if arg != name {
+		if !matches(arg) {
 			continue
 		}
 
@@ -147,7 +155,7 @@ func (ah *argsHandler) consumeFlag(name string, bstyle bool) (values []string, e
 
 		// if we don't have a value specified, we have an error
 		if i+1 >= uint(len(ah.args)) || ah.used[i+1] || ah.args[i+1] == "--" {
-			return nil, errs.Tag("argument error").Errorf("no value for flag %q", name)
+			return nil, errs.Tag("argument error").Errorf("no value for flag %q", arg)
 		}
 
 		// consume the next argument as the flag value

@@ -45,3 +45,17 @@ func TestShortFlagOverridesFallback(t *testing.T) {
 		})
 	}
 }
+
+func TestRepeatedFlagMixedAliases(t *testing.T) {
+	for _, args := range [][]string{
+		{"--name", "a", "-n", "b", "--name=c", "-n=d"},
+		{"-n=a", "--name=b", "-n", "c", "--name", "d"},
+	} {
+		ah := newArgsHandler(args, nil, nil)
+		pf := newParamsFlags(newParamsMaker(), ah)
+		assert.DeepEqual(t, pf.Flag("name", "", nil, Short('n'), Repeated), []string{"a", "b", "c", "d"})
+		rest, err := ah.ConsumeArgs()
+		assert.NoError(t, err)
+		assert.Equal(t, len(rest), 0)
+	}
+}
