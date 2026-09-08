@@ -26,3 +26,22 @@ func TestParams(t *testing.T) {
 	assert.DeepEqual(t, &tr, pos.Arg("bool", "", Optional, Boolean, parseBool).(*bool))
 	assert.DeepEqual(t, []int{10, 20, 30}, pos.Arg("repInt", "", Repeated, parseInt).([]int))
 }
+
+func TestShortFlagOverridesFallback(t *testing.T) {
+	for _, source := range []string{"environment", "dynamic"} {
+		t.Run(source, func(t *testing.T) {
+			fallback := func(string) string { t.Fatal("unexpected environment lookup"); return "env" }
+			dynamic := func(string) ([]string, error) { t.Fatal("unexpected dynamic lookup"); return []string{"dynamic"}, nil }
+			env := "NAME"
+			if source == "dynamic" {
+				env = ""
+			}
+			ah := newArgsHandler([]string{"-n", "cli"}, dynamic, fallback)
+			pf := newParamsFlags(newParamsMaker(), ah)
+			assert.Equal(t, pf.Flag("name", "", "default", Short('n'), Getenv(env)), "cli")
+			rest, err := ah.ConsumeArgs()
+			assert.NoError(t, err)
+			assert.Equal(t, len(rest), 0)
+		})
+	}
+}

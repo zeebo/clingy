@@ -93,6 +93,14 @@ func (ah *argsHandler) ConsumeArg() (string, bool, error) {
 }
 
 func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (values []string, err error) {
+	vals, err := ah.consumeFlag(name, bstyle)
+	if err != nil || vals != nil {
+		return vals, err
+	}
+	return ah.flagDefault(name, getenv)
+}
+
+func (ah *argsHandler) consumeFlag(name string, bstyle bool) (values []string, err error) {
 	var used []uint
 
 	for i := uint(0); i < uint(len(ah.args)); i++ {
@@ -148,6 +156,14 @@ func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (val
 		i++
 	}
 
+	for _, i := range used {
+		ah.used[i] = true
+	}
+
+	return values, nil
+}
+
+func (ah *argsHandler) flagDefault(name, getenv string) (values []string, err error) {
 	// if the flag was not found and we have a getenv, try
 	if values == nil && getenv != "" && ah.getenv != nil {
 		if val := ah.getenv(getenv); val != "" {
@@ -158,10 +174,6 @@ func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (val
 	// if the flag was not found, try calling the dynamic callback
 	if values == nil && ah.dynamic != nil {
 		return ah.dynamic(name)
-	}
-
-	for _, i := range used {
-		ah.used[i] = true
 	}
 
 	return values, nil
