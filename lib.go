@@ -179,8 +179,9 @@ type Flags interface {
 	// If the Repeated option is specified, then the return type is a slice of
 	// whatever it would have been. Otherwise, if the Optional option is specified,
 	// the return type is a pointer to whatever it would have been. The value provided
-	// in def is returned if the flag was not specified. If def is null, then
-	// the flag is required, and an error will occur if it is not specified.
+	// in def is returned if the flag was not specified. If def is nil, the zero
+	// value of the return type is used. Pass Required as def to require the flag;
+	// an error will occur if it is not specified.
 	//
 	// Flag panics if the same name is defined twice, or if the same Short option
 	// is used twice.
