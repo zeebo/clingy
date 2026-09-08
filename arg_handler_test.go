@@ -159,3 +159,28 @@ func TestArgHandlerConsumedFlagValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Nil(t, vals)
 }
+
+func TestArgHandlerLiteralSeparators(t *testing.T) {
+	args := []string{"--", "--", "tail", "--"}
+	want := []string{"--", "tail", "--"}
+	ah := newArgsHandler(args, nil, nil)
+	assert.DeepEqual(t, ah.PeekArgs(), want)
+	for _, expected := range want {
+		got, ok, err := ah.PeekArg()
+		assert.NoError(t, err)
+		assert.That(t, ok)
+		assert.Equal(t, got, expected)
+		got, ok, err = ah.ConsumeArg()
+		assert.NoError(t, err)
+		assert.That(t, ok)
+		assert.Equal(t, got, expected)
+	}
+	_, ok, err := ah.PeekArg()
+	assert.NoError(t, err)
+	assert.That(t, !ok)
+	ah = newArgsHandler(args, nil, nil)
+	got, err := ah.ConsumeArgs()
+	assert.NoError(t, err)
+	assert.DeepEqual(t, got, want)
+	assert.Equal(t, len(ah.PeekArgs()), 0)
+}
