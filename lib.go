@@ -220,9 +220,10 @@ type Environment struct {
 	// If empty, os.Args[1:] is used.
 	Args []string
 
-	// Dynamic, if set, is consulted for global flag values if they are not
-	// specified as part of Args. If an error is returned, it will no longer
-	// be consulted, and the error will be returned from Run.
+	// Dynamic, if set, is consulted for global and command-local flag values
+	// if they are not specified as part of Args or provided by a flag's Getenv
+	// option. If an error is returned, it will no longer be consulted, and the
+	// error will be returned from Run.
 	Dynamic func(name string) (vals []string, err error)
 
 	// Wrap, if set, is called with the context and command that would have
