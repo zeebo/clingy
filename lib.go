@@ -184,7 +184,7 @@ type Flags interface {
 	// an error will occur if it is not specified.
 	//
 	// Flag panics if the same name is defined twice, or if the same Short option
-	// is used twice.
+	// is used twice, or if a name conflicts with another flag's short name.
 	Flag(name, desc string, def any, options ...Option) any
 
 	// Break inserts a line break in the usage output of the flags.

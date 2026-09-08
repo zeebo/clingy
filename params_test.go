@@ -59,3 +59,26 @@ func TestRepeatedFlagMixedAliases(t *testing.T) {
 		assert.Equal(t, len(rest), 0)
 	}
 }
+
+func TestFlagAliasNameCollision(t *testing.T) {
+	for _, reverse := range []bool{false, true} {
+		pf := newParamsFlags(newParamsMaker(), newArgsHandler(nil, nil, nil))
+		first := func() { pf.Flag("name", "", "", Short('n')) }
+		second := func() { pf.Flag("n", "", "") }
+		if reverse {
+			first, second = second, first
+		}
+		first()
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Error("accepted conflicting name and alias")
+				}
+			}()
+			second()
+		}()
+	}
+	// Giving a flag its own single-letter name as an alias is unambiguous.
+	pf := newParamsFlags(newParamsMaker(), newArgsHandler([]string{"-n", "value"}, nil, nil))
+	assert.Equal(t, pf.Flag("n", "", "", Short('n')), "value")
+}

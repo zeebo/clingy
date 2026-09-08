@@ -28,6 +28,12 @@ func (ps *paramsMaker) newParam(name, desc string, def any, options ...Option) *
 	} else if p.short != 0 && ps.shorts.Has(p.short) {
 		panic(fmt.Sprintf("parameter already defined with short-name: %q", p.short))
 	}
+	if len(name) == 1 && ps.shorts.Has(name[0]) {
+		panic(fmt.Sprintf("parameter name conflicts with short-name: %q", name))
+	}
+	if p.short != 0 && ps.set[string(p.short)] != nil {
+		panic(fmt.Sprintf("parameter short-name conflicts with name: %q", p.short))
+	}
 	var err error
 	p.typ, err = checkFns(p.fns)
 	if err != nil {
