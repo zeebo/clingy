@@ -18,7 +18,7 @@ func newParamsMaker() *paramsMaker {
 	}
 }
 
-func (ps *paramsMaker) newParam(name, desc string, def interface{}, options ...Option) *param {
+func (ps *paramsMaker) newParam(name, desc string, def any, options ...Option) *param {
 	p := &param{name: name, def: def, desc: desc}
 	for _, opt := range options {
 		opt.do(&p.paramOpts)

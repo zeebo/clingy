@@ -17,13 +17,13 @@ type paramOpts struct {
 	bstyle bool
 	getenv string
 	typ    string
-	fns    []interface{}
+	fns    []any
 }
 
 type param struct {
 	paramOpts
 	name string
-	def  interface{}
+	def  any
 	desc string
 	typ  reflect.Type
 	err  error
@@ -39,7 +39,7 @@ func (p *param) zeroType() reflect.Type {
 	return typ
 }
 
-func (p *param) zero() interface{} {
+func (p *param) zero() any {
 	return zero(p.zeroType())
 }
 
@@ -74,12 +74,12 @@ func newParams(pp *paramsPos, pf *paramsFlags) *params {
 	}
 }
 
-func (p *params) Arg(name, desc string, options ...Option) (val interface{}) {
+func (p *params) Arg(name, desc string, options ...Option) (val any) {
 	p.pos = true
 	return p.pp.Arg(name, desc, options...)
 }
 
-func (p *params) Flag(name, desc string, def interface{}, options ...Option) (val interface{}) {
+func (p *params) Flag(name, desc string, def any, options ...Option) (val any) {
 	if p.pos {
 		panic("must perform all Flag/Break calls before any Arg calls")
 	}

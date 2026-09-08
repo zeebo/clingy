@@ -1,6 +1,6 @@
 module github.com/zeebo/clingy
 
-go 1.16
+go 1.22
 
 require (
 	github.com/zeebo/assert v1.3.0

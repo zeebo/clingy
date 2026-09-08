@@ -19,7 +19,7 @@ func newParamsFlags(ps *paramsMaker, ah *argsHandler) *paramsFlags {
 	}
 }
 
-func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Option) (val interface{}) {
+func (pf *paramsFlags) Flag(name, desc string, def any, options ...Option) (val any) {
 	p := pf.pm.newParam(name, desc, def, options...)
 	pf.include(p)
 
@@ -44,7 +44,7 @@ func (pf *paramsFlags) Flag(name, desc string, def interface{}, options ...Optio
 	return val
 }
 
-func (pf *paramsFlags) getValue(p *param) (val interface{}, err error) {
+func (pf *paramsFlags) getValue(p *param) (val any, err error) {
 	names := []string{p.name}
 	if p.short != 0 {
 		names = append(names, string(p.short))

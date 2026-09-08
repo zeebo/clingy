@@ -60,7 +60,7 @@ type Result struct {
 	Err    error
 }
 
-func logFailed(t *testing.T, format string, args ...interface{}) {
+func logFailed(t *testing.T, format string, args ...any) {
 	if t.Failed() {
 		t.Logf(format, args...)
 	}
