@@ -97,6 +97,9 @@ func (ah *argsHandler) ConsumeFlag(name string, bstyle bool, getenv string) (val
 
 	for i := uint(0); i < uint(len(ah.args)); i++ {
 		arg := ah.args[i]
+		if ah.used[i] {
+			continue
+		}
 
 		// check if the argument ends all flags
 		if arg == "--" {

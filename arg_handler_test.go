@@ -149,3 +149,13 @@ func TestArgHandler(t *testing.T) {
 		assert.DeepEqual(t, ah.PeekArgs(), []string{})
 	}
 }
+
+func TestArgHandlerConsumedFlagValue(t *testing.T) {
+	ah := newArgsHandler([]string{"--text", "--enabled"}, nil, nil)
+	vals, err := ah.ConsumeFlag("text", false, "")
+	assert.NoError(t, err)
+	assert.DeepEqual(t, vals, []string{"--enabled"})
+	vals, err = ah.ConsumeFlag("enabled", true, "")
+	assert.NoError(t, err)
+	assert.Nil(t, vals)
+}
