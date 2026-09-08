@@ -26,7 +26,7 @@ func (ah *argsHandler) PeekArgs() []string {
 	sep := false
 	out := make([]string, 0, len(ah.args))
 	for i, arg := range ah.args {
-		if arg == "--" {
+		if !sep && arg == "--" {
 			sep = true
 			continue
 		} else if ah.used[i] {
@@ -43,7 +43,7 @@ func (ah *argsHandler) ConsumeArgs() ([]string, error) {
 	sep := false
 	out := make([]string, 0, len(ah.args))
 	for i, arg := range ah.args {
-		if arg == "--" {
+		if !sep && arg == "--" {
 			sep = true
 			continue
 		} else if ah.used[i] {
@@ -62,7 +62,7 @@ func (ah *argsHandler) ConsumeArgs() ([]string, error) {
 func (ah *argsHandler) PeekArg() (string, bool, error) {
 	sep := false
 	for i, arg := range ah.args {
-		if arg == "--" {
+		if !sep && arg == "--" {
 			sep = true
 			continue
 		} else if ah.used[i] {
@@ -78,7 +78,7 @@ func (ah *argsHandler) PeekArg() (string, bool, error) {
 func (ah *argsHandler) ConsumeArg() (string, bool, error) {
 	sep := false
 	for i, arg := range ah.args {
-		if arg == "--" {
+		if !sep && arg == "--" {
 			sep = true
 			continue
 		} else if ah.used[i] {
